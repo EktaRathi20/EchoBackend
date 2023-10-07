@@ -1,7 +1,7 @@
 import express from "express";
 import { UserController } from "../controllers/userController";
 
-export const userRouter: express.Router = express.Router();
+export const userRoute: express.Router = express.Router();
 
-userRouter.post('/signUp', UserController .signUp);
-userRouter.post('/login', UserController .login);
+userRoute.post('/signUp', UserController .signUp);
+userRoute.post('/login', UserController .login);
