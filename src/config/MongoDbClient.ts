@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export const connection = async () => {
+export const connectToDatabase  = async () => {
     try {
         const url = 'mongodb://127.0.0.1:27017/ECHO-DB';
         mongoose.connect(url);

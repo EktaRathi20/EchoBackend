@@ -1,1 +1,0 @@
-export { CUser } from "./userController";

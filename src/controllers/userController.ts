@@ -1,10 +1,10 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import Jwt from "jsonwebtoken";
+import { IUser, userSchema } from "../models/userModel";
 import { validateCredential, validateUser } from "../validation/userValidation";
-import { IUser, userSchema } from "../models";
 
-export class CUser {
+// import Jwt from "jsonwebtoken"; // TODO | in future
+export class UserController  {
 
   /**
    * Handles user registration.
@@ -53,10 +53,10 @@ export class CUser {
       if (existingUser) {
         if(bcrypt.compareSync(user.password, existingUser.password)){
 
-          // If the password matches, generate a JWT token
-          const jwtToken = Jwt.sign({id:existingUser.id, email:existingUser.email}, "secret", {expiresIn:"24h"});
+          // TODO | in future |  If the password matches, generate a JWT token 
+          // const jwtToken = Jwt.sign({id:existingUser.id, email:existingUser.email}, "secret", {expiresIn:"24h"});
           return response.status(200).json({
-            jwtToken,
+            // jwtToken,
             user:existingUser,
             message: "User login successfully"
           })

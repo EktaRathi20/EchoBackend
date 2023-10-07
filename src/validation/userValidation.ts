@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { IUser } from "../models";
+import { IUser } from "../models/userModel";
 
 export const validateUser = (user: IUser) => {
   const userValidationSchema = Joi.object().keys({
