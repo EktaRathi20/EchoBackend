@@ -1,8 +1,8 @@
 import express from "express";
 import cors from 'cors';
 import { connectToDatabase } from "./config/MongoDbClient";
-import { routeMiddleware } from "./middleware/Route.Middleware";
-import { userRoute } from "./routes/User.Route";
+import { routeMiddleware } from "./middleware/RouteMiddleware";
+import { userRoute } from "./routes/UserRoute";
 
 
 const app: express.Application = express();

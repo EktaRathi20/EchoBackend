@@ -1,7 +1,7 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import { IUser, userSchema } from "../models/User.Model";
-import { validateCredential, validateUser } from "../validation/User.Validation";
+import { IUser, userSchema } from "../models/UserModel";
+import { validateCredential, validateUser } from "../validation/UserValidation";
 
 // import Jwt from "jsonwebtoken"; // TODO | in future
 export class UserController  {
