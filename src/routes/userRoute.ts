@@ -3,4 +3,5 @@ import { CUser } from "../controllers";
 
 export const RUser: express.Router = express.Router();
 
-RUser.post('/signUp', CUser.signUp)
+RUser.post('/signUp', CUser.signUp);
+RUser.post('/login', CUser.login);
