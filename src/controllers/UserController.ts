@@ -30,14 +30,13 @@ export class UserController {
       });
       if (existingUsername)
         return response.status(403).json({ error: "Username already exists" });
-      
+
       // Hash the user's password
-      const salt = await bcrypt.genSalt(10);
+      const salt = await bcrypt.genSalt(parseInt(process.env.SALT as string));
       user.password = await bcrypt.hash(user.password, salt);
 
       // Create and save the user using Mongoose
       const newUser = new userSchema(user);
-      console.log(newUser)
       await newUser.save();
 
       response.status(201).json({ message: "User registered successfully" });
