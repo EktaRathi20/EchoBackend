@@ -5,3 +5,5 @@ export const userRoute: express.Router = express.Router();
 
 userRoute.post('/signUp', UserController .signUp);
 userRoute.post('/login', UserController .login);
+userRoute.post('/refreshToken', UserController.refreshToken);
+userRoute.post('/forgotPassword', UserController.forgotPassword);

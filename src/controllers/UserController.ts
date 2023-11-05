@@ -1,11 +1,12 @@
 import express from "express";
 import bcrypt from "bcrypt";
-import { IUser, userSchema } from "../models/UserModel";
+import { IUser, IUserDb, userSchema } from "../models/UserModel";
 import { validateCredential, validateUser } from "../validation/UserValidation";
+import { sendOTP } from "../utility/SendMail";
+import { generateTokens } from "../utility/generateToken";
+import { verifyRefreshToken } from "../utility/verifyToken";
 
-// import Jwt from "jsonwebtoken"; // TODO | in future
-export class UserController  {
-
+export class UserController {
   /**
    * Handles user registration.
    */
@@ -15,7 +16,9 @@ export class UserController  {
 
       // Validate the user using Joi
       const { error } = validateUser(user);
-      if (error) return response.status(400).json({ error: error.details[0].message });
+
+      if (error)
+        return response.status(400).json({ error: error.details[0].message });
 
       // Check if the user already exists
       const existingUser = await userSchema.findOne({ email: user.email });
@@ -24,7 +27,8 @@ export class UserController  {
       }
 
       // Hash the user's password
-      const salt = await bcrypt.genSalt(10);
+
+      const salt = await bcrypt.genSalt(process.env.SALT as number | undefined);
       user.password = await bcrypt.hash(user.password, salt);
 
       // Create and save the user using Mongoose
@@ -40,31 +44,88 @@ export class UserController  {
   /**
    * Handles user login/authentication.
    */
-  static async login(request:express.Request, response:express.Response){
+  static async login(request: express.Request, response: express.Response) {
     try {
       const user: IUser = request.body;
 
       // Validate user credentials
-      const {error} = validateCredential(user);
-      if(error) return response.status(400).json({ error: error.details[0].message });
+      const { error } = validateCredential(user);
+      if (error)
+        return response.status(400).json({ error: error.details[0].message });
 
       // Check if a user with the provided email exists in the database
-      const existingUser = await userSchema.findOne({ email: user.email });
-      if (existingUser) {
-        if(bcrypt.compareSync(user.password, existingUser.password)){
+      let existingUser: IUserDb = (await userSchema.findOne({
+        email: user.email,
+      })) as IUserDb;
 
-          // TODO | in future |  If the password matches, generate a JWT token 
-          // const jwtToken = Jwt.sign({id:existingUser.id, email:existingUser.email}, "secret", {expiresIn:"24h"});
+      if (existingUser) {
+        if (bcrypt.compareSync(user.password, existingUser.password)) {
+          const { accessToken, refreshToken } = await generateTokens(
+            existingUser
+          );
+
           return response.status(200).json({
-            // jwtToken,
-            user:existingUser,
-            message: "User login successfully"
-          })
+            accessToken,
+            refreshToken,
+            user: existingUser,
+            message: "User login successfully",
+          });
         }
-      }else{
+      } else {
         return response.status(400).json({ error: "Invalid Credential" });
       }
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
 
+  /**
+   * Handles refreshing user access tokens using a refresh token.
+   */
+  static async refreshToken(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      verifyRefreshToken(request.body.refreshToken)
+        .then(async ({ tokenDetails }) => {
+          const responseTokenDetails = Object.assign({} as IUserDb, tokenDetails);
+          const { accessToken, refreshToken } = await generateTokens(responseTokenDetails);
+          response.status(200).json({
+            error: false,
+            accessToken,
+            refreshToken,
+            message: "token created successfully",
+          });
+        })
+        .catch((err) => response.status(400).json(err));
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * Handles forgot password
+   */
+  static async forgotPassword(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const user: IUser = request.body;
+
+      const existingUser = await userSchema.findOne({ email: user.email });
+      if (!existingUser)
+        return response.status(400).json({ error: "E-Mail doesn't exists" });
+
+      const res = await sendOTP(existingUser.email);
+      if (res?.status === 200) {
+        existingUser.otp = res.OTP as string;
+        await existingUser.save();
+      }
+      return response.status(res.status).json({
+        message: res.message,
+      });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
