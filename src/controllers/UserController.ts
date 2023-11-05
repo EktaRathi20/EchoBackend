@@ -21,23 +21,28 @@ export class UserController {
         return response.status(400).json({ error: error.details[0].message });
 
       // Check if the user already exists
-      const existingUser = await userSchema.findOne({ email: user.email });
-      if (existingUser) {
+      const existingEmail = await userSchema.findOne({ email: user.email });
+      if (existingEmail)
         return response.status(403).json({ error: "E-Mail already exists" });
-      }
 
+      const existingUsername = await userSchema.findOne({
+        username: user.username,
+      });
+      if (existingUsername)
+        return response.status(403).json({ error: "Username already exists" });
+      
       // Hash the user's password
-
-      const salt = await bcrypt.genSalt(process.env.SALT as number | undefined);
+      const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(user.password, salt);
 
       // Create and save the user using Mongoose
       const newUser = new userSchema(user);
+      console.log(newUser)
       await newUser.save();
 
       response.status(201).json({ message: "User registered successfully" });
     } catch (error) {
-      response.status(500).json({ error: "Internal server error" });
+      response.status(500).json({ error: error });
     }
   }
 
@@ -89,8 +94,13 @@ export class UserController {
     try {
       verifyRefreshToken(request.body.refreshToken)
         .then(async ({ tokenDetails }) => {
-          const responseTokenDetails = Object.assign({} as IUserDb, tokenDetails);
-          const { accessToken, refreshToken } = await generateTokens(responseTokenDetails);
+          const responseTokenDetails = Object.assign(
+            {} as IUserDb,
+            tokenDetails
+          );
+          const { accessToken, refreshToken } = await generateTokens(
+            responseTokenDetails
+          );
           response.status(200).json({
             error: false,
             accessToken,
