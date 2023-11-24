@@ -142,7 +142,7 @@ export class UserController {
 }
 
 /**
-* TODO: OTP Verification 
+* TODO: Handle OTP Verification 
 */
 /* static async verifyOTP(
   request: express.Request,
@@ -158,6 +158,27 @@ export class UserController {
     
     return response.status(200).json({ message: "OTP verification successful" });
     
+  }catch(error){
+    response.status(500).json({error:"Internal server error"});
+  }
+}*/
+
+/**
+*  TODO: Handle Reset Password 
+*/
+/*static async resetPassword(
+  request: express.Request,
+  response: express.Response
+){
+  try{
+    const { email, newPassword } = request.body;
+    const existingUser = await userSchema.findOne({ email });
+    if (!existingUser) return response.status(400).json({ error: "User not found" });
+    
+    existingUser.password = newPassword; // Update the password
+    
+    await existingUser.save();
+    return response.status(200).json({ message: "Password reset successful" });
   }catch(error){
     response.status(500).json({error:"Internal server error"});
   }
