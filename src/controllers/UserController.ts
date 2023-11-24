@@ -140,3 +140,25 @@ export class UserController {
     }
   }
 }
+
+/**
+* TODO: OTP Verification 
+*/
+/* static async verifyOTP(
+  request: express.Request,
+  response: express.Response
+){
+  try{
+    const { email, otp } = request.body;
+    
+    const existingUser = await userSchema.findOne({ email });
+    if (!existingUser) return response.status(400).json({ error: "User not found" });
+
+    if (existingUser.otp !== otp) return response.status(400).json({ error: "Invalid OTP" });
+    
+    return response.status(200).json({ message: "OTP verification successful" });
+    
+  }catch(error){
+    response.status(500).json({error:"Internal server error"});
+  }
+}*/
