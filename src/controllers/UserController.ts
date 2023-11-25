@@ -139,47 +139,59 @@ export class UserController {
       response.status(500).json({ error: "Internal server error" });
     }
   }
+
+  /**
+   * TODO: Handle OTP Verification
+   */
+  static async verifyOTP(request: express.Request, response: express.Response) {
+    try {
+      const { email, otp } = request.body;
+
+      const existingUser = await userSchema.findOne({ email });
+      if (!existingUser)
+        return response.status(400).json({ error: "User not found" });
+
+      if (existingUser.otp !== otp)
+        return response.status(400).json({ error: "Invalid OTP" });
+
+      return response
+        .status(200)
+        .json({ message: "OTP verification successful" });
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   *  TODO: Handle Reset Password
+   */
+  static async resetPassword(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { email, newPassword } = request.body;
+      const existingUser = await userSchema.findOne({ email });
+      if (!existingUser)
+        return response.status(400).json({ error: "User not found" });
+
+      const salt = await bcrypt.genSalt(parseInt(process.env.SALT as string));
+      const newUserPassword = await bcrypt.hash(newPassword, salt);
+
+      const isPasswordValid = bcrypt.compareSync(newUserPassword, existingUser.password);
+
+      if(!isPasswordValid){
+        return response.status(400).json({ error: "New password must be different from the old password" });
+      }
+
+      existingUser.password = newUserPassword; // Update the password
+
+      await existingUser.save();
+      return response
+        .status(200)
+        .json({ message: "Password reset successful" });
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
-
-/**
-* TODO: Handle OTP Verification 
-*/
-/* static async verifyOTP(
-  request: express.Request,
-  response: express.Response
-){
-  try{
-    const { email, otp } = request.body;
-    
-    const existingUser = await userSchema.findOne({ email });
-    if (!existingUser) return response.status(400).json({ error: "User not found" });
-
-    if (existingUser.otp !== otp) return response.status(400).json({ error: "Invalid OTP" });
-    
-    return response.status(200).json({ message: "OTP verification successful" });
-    
-  }catch(error){
-    response.status(500).json({error:"Internal server error"});
-  }
-}*/
-
-/**
-*  TODO: Handle Reset Password 
-*/
-/*static async resetPassword(
-  request: express.Request,
-  response: express.Response
-){
-  try{
-    const { email, newPassword } = request.body;
-    const existingUser = await userSchema.findOne({ email });
-    if (!existingUser) return response.status(400).json({ error: "User not found" });
-    
-    existingUser.password = newPassword; // Update the password
-    
-    await existingUser.save();
-    return response.status(200).json({ message: "Password reset successful" });
-  }catch(error){
-    response.status(500).json({error:"Internal server error"});
-  }
-}*/
