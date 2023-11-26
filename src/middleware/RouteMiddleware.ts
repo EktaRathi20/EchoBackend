@@ -7,7 +7,7 @@ export const routeMiddleware = async (
   next: express.NextFunction
 ) => {
   if (
-    request.path === "/api/signup" ||
+    request.path === "/api/signUp" ||
     request.path === "/api/login" ||
     request.path === "/api/forgotPassword" ||
     request.path === "/api/verifyOTP" ||
