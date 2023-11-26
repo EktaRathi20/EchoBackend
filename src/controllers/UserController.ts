@@ -5,7 +5,9 @@ import { validateCredential, validateUser } from "../validation/UserValidation";
 import { sendOTP } from "../utility/SendMail";
 import { generateTokens } from "../utility/generateToken";
 import { verifyRefreshToken } from "../utility/verifyToken";
-
+import mongoose from "mongoose";
+import path from "path";
+const fs = require("fs").promises;
 export class UserController {
   /**
    * Handles user registration.
@@ -71,7 +73,7 @@ export class UserController {
           return response.status(200).json({
             accessToken,
             refreshToken,
-            user: existingUser,
+            id: existingUser.id,
             message: "User login successfully",
           });
         }
@@ -141,7 +143,7 @@ export class UserController {
   }
 
   /**
-   * TODO: Handle OTP Verification
+   * Handle OTP Verification
    */
   static async verifyOTP(request: express.Request, response: express.Response) {
     try {
@@ -163,7 +165,7 @@ export class UserController {
   }
 
   /**
-   *  TODO: Handle Reset Password
+   * Handle Reset Password
    */
   static async resetPassword(
     request: express.Request,
@@ -178,10 +180,15 @@ export class UserController {
       const salt = await bcrypt.genSalt(parseInt(process.env.SALT as string));
       const newUserPassword = await bcrypt.hash(newPassword, salt);
 
-      const isPasswordValid = bcrypt.compareSync(newUserPassword, existingUser.password);
+      const isPasswordValid = bcrypt.compareSync(
+        newUserPassword,
+        existingUser.password
+      );
 
-      if(!isPasswordValid){
-        return response.status(400).json({ error: "New password must be different from the old password" });
+      if (!isPasswordValid) {
+        return response.status(400).json({
+          error: "New password must be different from the old password",
+        });
       }
 
       existingUser.password = newUserPassword; // Update the password
@@ -192,6 +199,149 @@ export class UserController {
         .json({ message: "Password reset successful" });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * Handle to get user profile by ID
+   */
+  static async getUserByID(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.id;
+
+      const existingUser = await userSchema
+        .findById(new mongoose.Types.ObjectId(userId))
+        .select("-password -__v -_id");
+
+      if (!existingUser) {
+        return response.status(404).json({ error: "User not found" });
+      }
+
+      // Return the user profile
+      response.status(200).json(existingUser);
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * handle follow user
+   */
+
+  static async followUser(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const followerId = request.params.followerId;
+
+      const user = await userSchema.findById(userId);
+      const follower = await userSchema.findById(followerId);
+
+      if (!user || !follower) {
+        return response
+          .status(404)
+          .json({ message: "User or follower not found" });
+      }
+
+      // Check if user is already being followed
+      if (user.followers?.includes(follower.id)) {
+        return response
+          .status(400)
+          .json({ message: "User is already being followed" });
+      }
+
+      // Update user's followers and follower's following
+      user.following?.push(follower.id);
+      follower.followers?.push(user.id);
+
+      await user.save();
+      await follower.save();
+
+      response.json({ message: "Successfully followed" });
+    } catch (error) {
+      response.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle unfollow user
+   */
+  static async unfollowUser(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const followerId = request.params.followerId;
+
+      // Assuming you have a User model
+      const user = await userSchema.findById(userId);
+      const follower = await userSchema.findById(followerId);
+
+      if (!user || !follower) {
+        return response
+          .status(404)
+          .json({ message: "User or follower not found" });
+      }
+
+      // Remove follower and following references
+      user.followers = user.followers?.filter(
+        (id) => id.toString() !== followerId
+      );
+      follower.following = follower.following?.filter(
+        (id) => id.toString() !== userId
+      );
+
+      await user.save();
+      await follower.save();
+
+      response.json({ message: "Successfully unfollowed" });
+    } catch (error) {
+      response.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle upload profile image
+   */
+
+  static async updateProfileImage(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      const file = request.file;
+
+      if (!file) {
+        return response.status(400).json({ message: "No file uploaded" });
+      }
+
+      const basePath = "C:\\EchoBackend";
+
+      // If user already has a profile image, delete the old file
+      if (user.profileImage) {
+        await fs.unlink(user.profileImage);
+      }
+
+      // Set the new profile image path and save the user
+      user.profileImage = path.join(basePath, "uploads", file.filename);
+      await user.save();
+
+      response.json({ message: "Profile image updated successfully" });
+    } catch (error) {
+      response.status(500).json({ message: "Internal Server Error" });
     }
   }
 }

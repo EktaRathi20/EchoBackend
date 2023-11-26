@@ -1,5 +1,7 @@
 import Jwt from "jsonwebtoken";
-import { userTokenSchema, IUserDb, IToken } from "../models/UserModel";
+import { userTokenSchema, IToken } from "../models/UserTokenModel";
+import { IUserDb } from "../models/UserModel";
+
 export const generateTokens = async (user: IUserDb) => {
   try {
     const payload = { id: user.id, email: user.email };

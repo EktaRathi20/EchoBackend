@@ -1,17 +1,17 @@
 import jwt from "jsonwebtoken";
-import { IToken, userTokenSchema } from "../models/UserModel";
+import { userTokenSchema } from "../models/UserTokenModel";
 
-export const verifyRefreshToken = async (refreshToken: IToken) => {
-    const privateKey : jwt.Secret = process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret;
+export const verifyRefreshToken = async (refreshToken: string) => {
+    const privateKey: jwt.Secret = process.env.REFRESH_TOKEN_PRIVATE_KEY as jwt.Secret;
 
     try {
         const isExists = await userTokenSchema.findOne({ token: refreshToken });
-        
+
         if (!isExists) {
             throw { error: true, message: "Invalid refresh token" };
         }
 
-        const tokenDetails = jwt.verify(refreshToken.token, privateKey);
+        const tokenDetails = jwt.verify(refreshToken, privateKey);
 
         return {
             tokenDetails,
@@ -22,4 +22,3 @@ export const verifyRefreshToken = async (refreshToken: IToken) => {
         throw { error: true, message: "Invalid refresh token" };
     }
 };
-
