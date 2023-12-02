@@ -177,19 +177,19 @@ export class UserController {
       if (!existingUser)
         return response.status(400).json({ error: "User not found" });
 
-      const salt = await bcrypt.genSalt(parseInt(process.env.SALT as string));
-      const newUserPassword = await bcrypt.hash(newPassword, salt);
-
       const isPasswordValid = bcrypt.compareSync(
-        newUserPassword,
+        newPassword,
         existingUser.password
       );
 
-      if (!isPasswordValid) {
+      if (isPasswordValid) {
         return response.status(400).json({
           error: "New password must be different from the old password",
         });
       }
+
+      const salt = await bcrypt.genSalt(parseInt(process.env.SALT as string));
+      const newUserPassword = await bcrypt.hash(newPassword, salt);
 
       existingUser.password = newUserPassword; // Update the password
 
