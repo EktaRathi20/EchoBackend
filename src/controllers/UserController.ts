@@ -377,6 +377,7 @@ export class UserController {
       const modifiedResults = filteredResults.map((user) => ({
         id: user._id,
         firstName: user.firstName,
+        lastName:user.lastName,
         username: user.username,
         profileImage: user.profileImage,
         isFollowing: user.following?.includes(
