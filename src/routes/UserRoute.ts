@@ -17,3 +17,6 @@ userRoute.post('/follow/:userId/:followerId', UserController.followUser);
 userRoute.post('/unfollow/:userId/:followerId', UserController.unfollowUser);
 userRoute.post('/uploadImg/:userId', upload.single("image") ,UserController.updateProfileImage);
 userRoute.get('/searchUser/:userId', UserController.searchUsers);
+userRoute.post('/createPost', UserController.createPost);
+userRoute.post('/likePost/:postId', UserController.likePost);
+userRoute.post('/unlikePost/:postId', UserController.unlikePost);

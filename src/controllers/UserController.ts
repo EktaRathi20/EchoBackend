@@ -7,6 +7,7 @@ import { generateTokens } from "../utility/generateToken";
 import { verifyRefreshToken } from "../utility/verifyToken";
 import mongoose from "mongoose";
 import path from "path";
+import { postSchema } from "../models/UserPostModel";
 const fs = require("fs").promises;
 export class UserController {
   /**
@@ -212,6 +213,20 @@ export class UserController {
     try {
       const userId = request.params.id;
 
+      const userPosts = await postSchema.find({ userId });
+
+      const formattedPosts = {
+        audio: [] as any,
+        text: [] as any,
+      };
+
+      userPosts.forEach((post) => {
+        const { content, likes, comments, type, _id } = post;
+        const formattedPost = { postId: _id, content, likes, comments };
+
+        formattedPosts[type].push(formattedPost);
+      });
+
       const existingUser = await userSchema
         .findById(new mongoose.Types.ObjectId(userId))
         .select("-password -__v -_id");
@@ -220,8 +235,13 @@ export class UserController {
         return response.status(404).json({ error: "User not found" });
       }
 
+      const userWithPosts = {
+        ...existingUser.toObject(),
+        posts: formattedPosts,
+      };
+
       // Return the user profile
-      return response.status(200).json(existingUser);
+      return response.status(200).json(userWithPosts);
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
@@ -281,7 +301,7 @@ export class UserController {
 
       // Assuming you have a User model
       const user = await userSchema.findById(userId);
-      const follower = await userSchema.findById (followerId);
+      const follower = await userSchema.findById(followerId);
 
       if (!user || !follower) {
         return response
@@ -302,7 +322,7 @@ export class UserController {
           (id) => id.toString() !== userId
         );
       } else {
-        return response.json({message:"user already unfollowed"});
+        return response.json({ message: "user already unfollowed" });
       }
 
       await user.save();
@@ -372,12 +392,14 @@ export class UserController {
         $or: [{ firstName: regex }, { lastName: regex }, { username: regex }],
       });
 
-      const filteredResults = results.filter(user => user._id.toString() !== request.params.userId);
+      const filteredResults = results.filter(
+        (user) => user._id.toString() !== request.params.userId
+      );
 
       const modifiedResults = filteredResults.map((user) => ({
         id: user._id,
         firstName: user.firstName,
-        lastName:user.lastName,
+        lastName: user.lastName,
         username: user.username,
         profileImage: user.profileImage,
         isFollowing: user.following?.includes(
@@ -387,6 +409,75 @@ export class UserController {
       return response.json(modifiedResults);
     } catch (error) {
       return response.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle create a new post
+   */
+  static async createPost(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { userId, content, type } = request.body;
+      const newPost = new postSchema({ userId, content, type });
+      await newPost.save();
+      return response
+        .status(200)
+        .json({ message: "post created successfully" });
+    } catch (error) {
+      response.status(500).send("Internal Server Error");
+    }
+  }
+
+  /**
+   * Process a user's request to like a post.
+   */
+  static async likePost(request: express.Request, response: express.Response) {
+    try {
+      const { postId } = request.params;
+      const { userId } = request.body;
+      const post = await postSchema.findById(
+        new mongoose.Types.ObjectId(postId)
+      );
+      if (!post) return response.status(404).send("Post not found");
+      if (post.likes.includes(userId)) return response.status(200).json({ message: "Post already liked" });
+      else {
+        // User has not liked the post, add the like
+        post.likes.push(userId);
+        await post.save();
+        return response.status(200).json({ message: "Post liked successfully" });
+      }
+    } catch (error) {
+      response.status(500).send("Internal Server Error");
+    }
+  }
+
+  /**
+   * Process a user's request to unlike a post.
+   */
+  static async unlikePost(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { postId } = request.params;
+      const { userId } = request.body;
+      const post = await postSchema.findById(
+        new mongoose.Types.ObjectId(postId)
+      );
+      if (!post) return response.status(404).send("Post not found");
+      if (post.likes.includes(userId)) {
+        const index = post.likes.indexOf(userId);
+        post.likes.splice(index, 1);
+        await post.save();
+        return response.status(200).json({ message: "Post like removed successfully" });
+      }
+
+      return response.status(200).json({ message: "You haven't liked this post yet" });
+    } catch (error) {
+      response.status(500).send("Internal Server Error");
     }
   }
 }
