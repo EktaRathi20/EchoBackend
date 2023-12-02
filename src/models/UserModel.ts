@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+export interface IPost {
+  audio: string[]; // Assuming audio posts are stored as URLs or file paths
+  content: string[]; // Assuming text content posts are stored as strings
+}
 export interface IUser {
   firstName: string;
   lastName: string;
@@ -10,8 +14,9 @@ export interface IUser {
   password: string;
   otp: string;
   profileImage: string;
-  followers?: mongoose.Schema.Types.ObjectId[]; // Reference to followers
-  following?: mongoose.Schema.Types.ObjectId[]; // Reference to following
+  followers?: mongoose.Types.ObjectId[]; // Reference to followers
+  following?: mongoose.Types.ObjectId[]; // Reference to following
+  posts: IPost;
 }
 
 export interface IUserDb extends IUser {
@@ -62,15 +67,25 @@ export const userSchema = mongoose.model(
     },
     followers: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: "User",
       },
     ],
     following: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Types.ObjectId,
         ref: "User",
       },
     ],
+    posts: {
+      audio: {
+        type: [String], // Assuming audio posts are stored as URLs or file paths
+        default: [],
+      },
+      content: {
+        type: [String], // Assuming text content posts are stored as strings
+        default: [],
+      },
+    },
   })
 );

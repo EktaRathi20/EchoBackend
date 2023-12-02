@@ -221,7 +221,7 @@ export class UserController {
       }
 
       // Return the user profile
-      response.status(200).json(existingUser);
+      return response.status(200).json(existingUser);
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
@@ -249,20 +249,20 @@ export class UserController {
       }
 
       // Check if user is already being followed
-      if (user.followers?.includes(follower.id)) {
+      if (user.following?.includes(new mongoose.Types.ObjectId(follower.id))) {
         return response
           .status(400)
           .json({ message: "User is already being followed" });
       }
 
       // Update user's followers and follower's following
-      user.following?.push(follower.id);
-      follower.followers?.push(user.id);
+      user.following?.push(new mongoose.Types.ObjectId(follower.id));
+      follower.followers?.push(new mongoose.Types.ObjectId(user.id));
 
       await user.save();
       await follower.save();
 
-      response.json({ message: "Successfully followed" });
+      return response.json({ message: "Successfully followed" });
     } catch (error) {
       response.status(500).json({ message: "Internal Server Error" });
     }
@@ -281,7 +281,7 @@ export class UserController {
 
       // Assuming you have a User model
       const user = await userSchema.findById(userId);
-      const follower = await userSchema.findById(followerId);
+      const follower = await userSchema.findById (followerId);
 
       if (!user || !follower) {
         return response
@@ -290,17 +290,25 @@ export class UserController {
       }
 
       // Remove follower and following references
-      user.followers = user.followers?.filter(
-        (id) => id.toString() !== followerId
-      );
-      follower.following = follower.following?.filter(
-        (id) => id.toString() !== userId
-      );
+
+      if (
+        user.following?.includes(new mongoose.Types.ObjectId(followerId)) &&
+        follower.followers?.includes(new mongoose.Types.ObjectId(userId))
+      ) {
+        user.following = user.following?.filter(
+          (id) => id.toString() !== followerId
+        );
+        follower.followers = follower.followers?.filter(
+          (id) => id.toString() !== userId
+        );
+      } else {
+        return response.json({message:"user already unfollowed"});
+      }
 
       await user.save();
       await follower.save();
 
-      response.json({ message: "Successfully unfollowed" });
+      return response.json({ message: "Successfully unfollowed" });
     } catch (error) {
       response.status(500).json({ message: "Internal Server Error" });
     }
@@ -342,6 +350,42 @@ export class UserController {
       response.json({ message: "Profile image updated successfully" });
     } catch (error) {
       response.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handles the search for users by name or username.
+   */
+  static async searchUsers(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const term: string | undefined = request.query.search as string;
+
+      if (!term) {
+        return response.status(400).json({ error: "Search term is required" });
+      }
+
+      const regex = new RegExp(term, "i");
+      const results = await userSchema.find({
+        $or: [{ firstName: regex }, { lastName: regex }, { username: regex }],
+      });
+
+      const filteredResults = results.filter(user => user._id.toString() !== request.params.userId);
+
+      const modifiedResults = filteredResults.map((user) => ({
+        id: user._id,
+        firstName: user.firstName,
+        username: user.username,
+        profileImage: user.profileImage,
+        isFollowing: user.following?.includes(
+          new mongoose.Types.ObjectId(request.params.userId)
+        ),
+      }));
+      return response.json(modifiedResults);
+    } catch (error) {
+      return response.status(500).json({ error: "Internal Server Error" });
     }
   }
 }
