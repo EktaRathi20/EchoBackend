@@ -1,6 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import { IComment, commentSchema, postSchema } from "../models/PostModel";
+import { userSchema } from "../models/UserModel";
+import { NotificationController } from "./NotificationController";
 
 export class PostController {
   /**
@@ -18,7 +20,7 @@ export class PostController {
         .status(200)
         .json({ message: "post created successfully" });
     } catch (error) {
-      response.status(500).send("Internal Server Error");
+      response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -39,12 +41,13 @@ export class PostController {
         // User has not liked the post, add the like
         post.likes.push(userId);
         await post.save();
+        NotificationController.createNotification(userId, "like", postId);
         return response
           .status(200)
           .json({ message: "Post liked successfully" });
       }
     } catch (error) {
-      response.status(500).send("Internal Server Error");
+      response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -75,7 +78,7 @@ export class PostController {
         .status(200)
         .json({ message: "You haven't liked this post yet" });
     } catch (error) {
-      response.status(500).send("Internal Server Error");
+      response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -102,12 +105,13 @@ export class PostController {
       post.comments.push(new mongoose.Types.ObjectId(newComment._id));
 
       await post.save();
+      NotificationController.createNotification(userId, "comment", postId);
 
       return response
         .status(200)
         .json({ message: "Comment added successfully", comment: newComment });
     } catch (error) {
-      response.status(500).send("Internal Server Error");
+      response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -143,7 +147,85 @@ export class PostController {
         .status(200)
         .json({ message: "Comment deleted successfully" });
     } catch (error) {
-      response.status(500).send("Internal Server Error");
+      response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * get all post : Home screen
+   */
+  static async getAllPost(request: express.Request, response: express.Response) {
+    try {
+      const userId = request.params.userId;
+      const userData = await userSchema.findById(
+        new mongoose.Types.ObjectId(userId)
+      );
+      if (!userData) {
+        return response.status(404).json({ error: "User not found" });
+      }
+      const userFollowing = userData.following || [];
+      const usersPosts: Record<string, any>[] = [];
+
+      if (userFollowing.length === 0) {
+        const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
+
+        const totalPost: Record<string, any> = {
+          text: [],
+          audio: [],
+        };
+        for (const post of allPosts) {
+          const postUser = await userSchema.findById(post.userId);
+          const formattedPost: Record<string, any> = {
+            username: postUser?.username,
+            firstName: postUser?.firstName,
+            lastName: postUser?.lastName,
+            profileImage: postUser?.profileImage,
+            isFollowed: false,
+            postId: post._id,
+            content: post.content,
+            likes: post.likes,
+            comments: post.comments,
+            createdAt: post.createdAt,
+          };
+          totalPost[post.type].push(formattedPost);
+        }
+
+        usersPosts.push(totalPost);
+      } else {
+        await Promise.all(
+          userFollowing.map(async (user) => {
+            const followingPosts = await postSchema.find({ userId: user });
+
+            const totalPost: Record<string, any> = {
+              text: [],
+              audio: [],
+            };
+
+            for (const post of followingPosts) {
+              const postUser = await userSchema.findById(post.userId);
+
+              const formattedPost: Record<string, any> = {
+                username: postUser?.username,
+                firstName: postUser?.firstName,
+                lastName: postUser?.lastName,
+                profileImage: postUser?.profileImage,
+                isFollowed: true,
+                postId: post._id,
+                content: post.content,
+                likes: post.likes,
+                comments: post.comments,
+                createdAt: post.createdAt,
+              };
+              totalPost[post.type].push(formattedPost);
+            }
+
+            usersPosts.push(totalPost);
+          })
+        );
+      }
+      response.status(200).json(usersPosts);
+    } catch (error) {
+      response.status(500).json({ error: "Internal server error" });
     }
   }
 }

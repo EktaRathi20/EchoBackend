@@ -4,6 +4,8 @@ import { connectToDatabase } from "./config/MongoDbClient";
 import { routeMiddleware } from "./middleware/RouteMiddleware";
 import { userRoute } from "./routes/UserRoute";
 import * as dotenv from 'dotenv';
+import { authRoute } from "./routes/AuthRoute";
+import { postRoute } from "./routes/PostRoute";
 dotenv.config();
 
 const app: express.Application = express();
@@ -14,7 +16,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(routeMiddleware);
+
+app.use('/api',authRoute);
 app.use('/api', userRoute);
+app.use('/api', postRoute);
 
 app.listen(port, host, async () => {
     await connectToDatabase();

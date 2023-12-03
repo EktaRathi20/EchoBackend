@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { INotification } from "./NotificationModel";
 export interface IUser {
   firstName: string;
   lastName: string;
@@ -12,6 +12,8 @@ export interface IUser {
   profileImage: string;
   followers?: mongoose.Types.ObjectId[]; // Reference to followers
   following?: mongoose.Types.ObjectId[]; // Reference to following
+  notifications: INotification[];
+
 }
 
 export interface IUserDb extends IUser {
@@ -72,5 +74,7 @@ export const userSchema = mongoose.model(
         ref: "User",
       },
     ],
+    notifications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notification' }],
+
   })
 );
