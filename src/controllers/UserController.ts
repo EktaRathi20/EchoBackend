@@ -3,6 +3,7 @@ import { userSchema } from "../models/UserModel";
 import mongoose from "mongoose";
 import path from "path";
 import { postSchema } from "../models/PostModel";
+import { followNotification } from "../utility/notification";
 const fs = require("fs").promises;
 export class UserController {
   /**
@@ -83,6 +84,7 @@ export class UserController {
 
       await user.save();
       await follower.save();
+      followNotification(userId, followerId);
 
       return response.json({ message: "Successfully followed" });
     } catch (error) {

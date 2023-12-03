@@ -1,4 +1,3 @@
-// notificationModel.ts
 import mongoose from "mongoose";
 
 export interface INotification {

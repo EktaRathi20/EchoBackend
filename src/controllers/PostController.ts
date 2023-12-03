@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import { IComment, commentSchema, postSchema } from "../models/PostModel";
 import { userSchema } from "../models/UserModel";
-import { NotificationController } from "./NotificationController";
+import { commentNotification, likeNotification } from "../utility/notification";
 
 export class PostController {
   /**
@@ -41,7 +41,9 @@ export class PostController {
         // User has not liked the post, add the like
         post.likes.push(userId);
         await post.save();
-        NotificationController.createNotification(userId, "like", postId);
+
+        likeNotification(userId, postId); // generate notification
+
         return response
           .status(200)
           .json({ message: "Post liked successfully" });
@@ -102,10 +104,14 @@ export class PostController {
 
       const newComment = await commentSchema.create(newCommentData);
 
-      post.comments.push(new mongoose.Types.ObjectId(newComment._id));
+      const commentId = newComment._id;
+
+      post.comments.push(new mongoose.Types.ObjectId(commentId));
 
       await post.save();
-      NotificationController.createNotification(userId, "comment", postId);
+
+      // Call the commentNotification function with the comment ID
+      commentNotification(userId, postId, commentId);
 
       return response
         .status(200)
@@ -154,7 +160,10 @@ export class PostController {
   /**
    * get all post : Home screen
    */
-  static async getAllPost(request: express.Request, response: express.Response) {
+  static async getAllPost(
+    request: express.Request,
+    response: express.Response
+  ) {
     try {
       const userId = request.params.userId;
       const userData = await userSchema.findById(

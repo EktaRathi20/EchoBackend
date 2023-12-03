@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-
-// Comment schema
 export interface IComment {
   userId: string;
   text: string;

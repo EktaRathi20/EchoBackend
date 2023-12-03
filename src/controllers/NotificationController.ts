@@ -1,7 +1,6 @@
 import express from "express";
 import { userSchema } from "../models/UserModel";
 import { notificationSchema } from "../models/NotificationModel";
-import { postSchema } from "../models/PostModel";
 
 export class NotificationController {
   static async getNotifications(
@@ -27,13 +26,36 @@ export class NotificationController {
 
         if (element) {
           const user = await userSchema.findById(element.userId);
-          totalNotification[element.type].push({
-            profileImage: user?.profileImage,
-            username: user?.username,
-            userId: element.userId,
-            postId: element.postId,
-            createdAt: element.createdAt,
-          });
+          if(element.type === 'like'){
+            totalNotification[element.type].push({
+              profileImage: user?.profileImage,
+              username: user?.username,
+              userId: element.userId,
+              postId: element.postId,
+              createdAt: element.createdAt,
+            });
+          }else if(element.type === 'comment'){
+            totalNotification[element.type].push({
+              profileImage: user?.profileImage,
+              username: user?.username,
+              userId: element.userId,
+              postId: element.postId,
+              commentId:element.commentId,
+              createdAt: element.createdAt,
+            });
+
+          }else if(element.type === 'follow'){
+            totalNotification[element.type].push({
+              profileImage: user?.profileImage,
+              username: user?.username,
+              userId: element.userId,
+              followerId: element.followerId,
+              createdAt: element.createdAt,
+            });
+
+          }else{
+            //nothing
+          }
         }
       }
 
@@ -43,31 +65,5 @@ export class NotificationController {
     }
   }
 
-  static async createNotification(
-    userId: string,
-    type: string,
-    postId?: string,
-    commentId?: string,
-    followerId?: string
-  ) {
-    try {
-      const notification = await notificationSchema.create({
-        type,
-        userId,
-        postId,
-        commentId,
-        followerId,
-        createdAt: new Date(),
-      });
 
-      const getUserId = await postSchema.findById(postId);
-      const postUserId = getUserId?.userId;
-
-      await userSchema.findByIdAndUpdate(postUserId, {
-        $push: { notifications: notification._id },
-      });
-    } catch (error) {
-      return error;
-    }
-  }
 }
