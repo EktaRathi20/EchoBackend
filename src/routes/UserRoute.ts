@@ -11,7 +11,7 @@ userRoute.get("/getUserByID/:id", UserController.getUserByID);
 userRoute.post("/follow/:userId/:followerId", UserController.followUser);
 userRoute.post("/unfollow/:userId/:followerId", UserController.unfollowUser);
 userRoute.post("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
-userRoute.get("/searchUser/:userId", UserController.searchUsers);
+userRoute.get("/searchUser", UserController.searchUsers);
 
 /**
  * notification route

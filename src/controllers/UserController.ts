@@ -196,11 +196,11 @@ export class UserController {
         $or: [{ firstName: regex }, { lastName: regex }, { username: regex }],
       });
 
-      const filteredResults = results.filter(
-        (user) => user._id.toString() !== request.params.userId
-      );
+      // const filteredResults = results.filter(
+      //   (user) => user._id.toString() !== request.params.userId
+      // );
 
-      const modifiedResults = filteredResults.map((user) => ({
+      const modifiedResults = results.map((user) => ({
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,

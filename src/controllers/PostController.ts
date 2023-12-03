@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { IComment, commentSchema, postSchema } from "../models/PostModel";
 import { userSchema } from "../models/UserModel";
 import { commentNotification, likeNotification } from "../utility/notification";
+// import { getPosts } from "../utility/homeScreen";
 
 export class PostController {
   /**
@@ -157,8 +158,34 @@ export class PostController {
     }
   }
 
+  static getPosts = async () => {
+    const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
+
+    const totalPost: Record<string, any> = {
+      text: [],
+      audio: [],
+    };
+    for (const post of allPosts) {
+      const postUser = await userSchema.findById(post.userId);
+      const formattedPost: Record<string, any> = {
+        username: postUser?.username,
+        firstName: postUser?.firstName,
+        lastName: postUser?.lastName,
+        profileImage: postUser?.profileImage,
+        isFollowed: false,
+        postId: post._id,
+        content: post.content,
+        likes: post.likes,
+        comments: post.comments,
+        createdAt: post.createdAt,
+      };
+      totalPost[post.type].push(formattedPost);
+    }
+    return totalPost;
+  };
+
   /**
-   * get all post : Home screen
+   * get all post : Home screen || TODO : need to implement pagination.
    */
   static async getAllPost(
     request: express.Request,
@@ -172,24 +199,31 @@ export class PostController {
       if (!userData) {
         return response.status(404).json({ error: "User not found" });
       }
+
       const userFollowing = userData.following || [];
       const usersPosts: Record<string, any>[] = [];
 
       if (userFollowing.length === 0) {
-        const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
+        const totalPosts = await PostController.getPosts(); // Await the asynchronous call
+        usersPosts.push(totalPosts);
+      } else {
+        const followingPosts = await postSchema.find({
+          userId: { $in: userFollowing },
+        });
 
         const totalPost: Record<string, any> = {
           text: [],
           audio: [],
         };
-        for (const post of allPosts) {
+
+        for (const post of followingPosts) {
           const postUser = await userSchema.findById(post.userId);
           const formattedPost: Record<string, any> = {
             username: postUser?.username,
             firstName: postUser?.firstName,
             lastName: postUser?.lastName,
             profileImage: postUser?.profileImage,
-            isFollowed: false,
+            isFollowed: true,
             postId: post._id,
             content: post.content,
             likes: post.likes,
@@ -198,43 +232,15 @@ export class PostController {
           };
           totalPost[post.type].push(formattedPost);
         }
-
-        usersPosts.push(totalPost);
-      } else {
-        await Promise.all(
-          userFollowing.map(async (user) => {
-            const followingPosts = await postSchema.find({ userId: user });
-
-            const totalPost: Record<string, any> = {
-              text: [],
-              audio: [],
-            };
-
-            for (const post of followingPosts) {
-              const postUser = await userSchema.findById(post.userId);
-
-              const formattedPost: Record<string, any> = {
-                username: postUser?.username,
-                firstName: postUser?.firstName,
-                lastName: postUser?.lastName,
-                profileImage: postUser?.profileImage,
-                isFollowed: true,
-                postId: post._id,
-                content: post.content,
-                likes: post.likes,
-                comments: post.comments,
-                createdAt: post.createdAt,
-              };
-              totalPost[post.type].push(formattedPost);
-            }
-
-            usersPosts.push(totalPost);
-          })
-        );
+        if (totalPost.text.length == 0 && totalPost.audio.length == 0) {
+          const totalPosts = await PostController.getPosts();
+          usersPosts.push(totalPosts);
+        } else usersPosts.push(totalPost);
       }
-      response.status(200).json(usersPosts);
+
+      return response.status(200).json(usersPosts);
     } catch (error) {
-      response.status(500).json({ error: "Internal server error" });
+      response.status(500).json({ error: error });
     }
   }
 }
