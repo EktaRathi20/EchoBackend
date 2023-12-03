@@ -26,3 +26,5 @@ userRoute.get("/searchUser/:userId", UserController.searchUsers);
 userRoute.post("/createPost", PostController.createPost);
 userRoute.post("/likePost/:postId", PostController.likePost);
 userRoute.post("/unlikePost/:postId", PostController.unlikePost);
+userRoute.post('/commentPost/:postId', PostController.addComment);
+userRoute.post('/deletePostComment/:postId/:commentId', PostController.removeComment);

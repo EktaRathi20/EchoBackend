@@ -1,6 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
-import { postSchema } from "../models/PostModel";
+import { IComment, commentSchema, postSchema } from "../models/PostModel";
 
 export class PostController {
   /**
@@ -74,6 +74,74 @@ export class PostController {
       return response
         .status(200)
         .json({ message: "You haven't liked this post yet" });
+    } catch (error) {
+      response.status(500).send("Internal Server Error");
+    }
+  }
+
+  /**
+   * Handle adding a comment to a post.
+   */
+  static async addComment(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { postId } = request.params;
+      const { userId, text } = request.body;
+
+      const post = await postSchema.findById(
+        new mongoose.Types.ObjectId(postId)
+      );
+      if (!post) return response.status(404).send("Post not found");
+
+      const newCommentData: IComment = { userId, text };
+
+      const newComment = await commentSchema.create(newCommentData);
+
+      post.comments.push(new mongoose.Types.ObjectId(newComment._id));
+
+      await post.save();
+
+      return response
+        .status(200)
+        .json({ message: "Comment added successfully", comment: newComment });
+    } catch (error) {
+      response.status(500).send("Internal Server Error");
+    }
+  }
+
+  /**
+   * Handle removing a comment from a post.
+   */
+  static async removeComment(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { postId, commentId } = request.params;
+
+      const post = await postSchema.findById(
+        new mongoose.Types.ObjectId(postId)
+      );
+      if (!post) return response.status(404).send("Post not found");
+
+      const commentIndex = post.comments.findIndex(
+        (comment) => comment.toString() === commentId
+      );
+      if (commentIndex === -1)
+        return response.status(404).send("Comment not found");
+
+      const deletedCommentId = post.comments.splice(commentIndex, 1)[0];
+
+      // Remove the comment from the Comment schema
+      await commentSchema.findByIdAndDelete(deletedCommentId);
+
+      await post.save();
+
+      return response
+        .status(200)
+        .json({ message: "Comment deleted successfully" });
     } catch (error) {
       response.status(500).send("Internal Server Error");
     }

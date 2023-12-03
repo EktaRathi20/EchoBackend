@@ -1,16 +1,31 @@
 import mongoose from "mongoose";
 
-export interface Comment {
+// Comment schema
+export interface IComment {
   userId: string;
   text: string;
 }
+export const commentSchema = mongoose.model(
+  "Comment",
+  new mongoose.Schema<IComment>({
+    userId: {
+      type: String,
+      required: true,
+    },
+    text: {
+      type: String,
+      required: true,
+    },
+  })
+);
 
 export interface IPost {
   userId: string;
   content: string;
   type: "text" | "audio";
   likes: string[];
-  comments: Comment[];
+  comments: mongoose.Types.ObjectId[];
+  createdAt: Date;
 }
 
 export const postSchema = mongoose.model(
@@ -36,9 +51,12 @@ export const postSchema = mongoose.model(
     ],
     comments: [
       {
-        userId: String,
-        text: String,
+        type: mongoose.Types.ObjectId,
       },
     ],
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
   })
 );
