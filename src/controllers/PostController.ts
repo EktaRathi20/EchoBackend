@@ -160,11 +160,11 @@ export class PostController {
 
   static getPosts = async () => {
     const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
-
-    const totalPost: Record<string, any> = {
-      text: [],
-      audio: [],
-    };
+    const totalPost = [];
+    // const totalPost: Record<string, any> = {
+    //   text: [],
+    //   audio: [],
+    // };
     for (const post of allPosts) {
       const postUser = await userSchema.findById(post.userId);
       const formattedPost: Record<string, any> = {
@@ -179,7 +179,7 @@ export class PostController {
         comments: post.comments,
         createdAt: post.createdAt,
       };
-      totalPost[post.type].push(formattedPost);
+      totalPost.push(formattedPost);
     }
     return totalPost;
   };
@@ -201,20 +201,15 @@ export class PostController {
       }
 
       const userFollowing = userData.following || [];
-      const usersPosts: Record<string, any>[] = [];
+      let usersPosts = [];
 
       if (userFollowing.length === 0) {
         const totalPosts = await PostController.getPosts(); // Await the asynchronous call
-        usersPosts.push(totalPosts);
+        usersPosts = [...totalPosts];
       } else {
         const followingPosts = await postSchema.find({
           userId: { $in: userFollowing },
         });
-
-        const totalPost: Record<string, any> = {
-          text: [],
-          audio: [],
-        };
 
         for (const post of followingPosts) {
           const postUser = await userSchema.findById(post.userId);
@@ -230,15 +225,23 @@ export class PostController {
             comments: post.comments,
             createdAt: post.createdAt,
           };
-          totalPost[post.type].push(formattedPost);
+          usersPosts.push(formattedPost);
         }
-        if (totalPost.text.length == 0 && totalPost.audio.length == 0) {
+        if (usersPosts.length === 0) {
           const totalPosts = await PostController.getPosts();
-          usersPosts.push(totalPosts);
-        } else usersPosts.push(totalPost);
+          usersPosts = totalPosts;
+        }
       }
 
-      return response.status(200).json(usersPosts);
+      // pagination
+
+      const pageNumber =parseInt(request.query.page as string) || 1; 
+      const pageSize = 5; 
+      const startIndex = (pageNumber - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const posts = usersPosts.slice(startIndex, endIndex);
+
+      response.status(200).json({ posts, current: posts.length, total:usersPosts.length });
     } catch (error) {
       response.status(500).json({ error: error });
     }
