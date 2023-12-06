@@ -15,15 +15,41 @@ export class PostController {
   ) {
     try {
       const { userId, content, type } = request.body;
-      const newPost = new postSchema({ userId, content, type });
-      await newPost.save();
+      const audioFile = request.file; // Get the uploaded file
+  
+      // Check if both audio and text types are present
+      if (audioFile && type === "text") {
+        return response.status(400).json({ error: "Cannot add both audio and text posts simultaneously" });
+      }
+  
+      if (type === "audio" && audioFile) {
+        const newPost = new postSchema({
+          userId,
+          content,
+          type,
+          audioFilePath: audioFile.path,
+        });
+        await newPost.save();
+      } else if (type === "text") {
+        const newPost = new postSchema({
+          userId,
+          content,
+          type,
+          audioFilePath: null,
+        });
+        await newPost.save();
+      } else {
+        return response.status(400).json({ error: "Invalid post type or missing file" });
+      }
+  
       return response
         .status(200)
-        .json({ message: "post created successfully" });
+        .json({ message: "Post created successfully" });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
   }
+  
 
   /**
    * Process a user's request to like a post.
@@ -125,6 +151,7 @@ export class PostController {
   /**
    * Handle removing a comment from a post.
    */
+
   static async removeComment(
     request: express.Request,
     response: express.Response
@@ -161,10 +188,7 @@ export class PostController {
   static getPosts = async () => {
     const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
     const totalPost = [];
-    // const totalPost: Record<string, any> = {
-    //   text: [],
-    //   audio: [],
-    // };
+
     for (const post of allPosts) {
       const postUser = await userSchema.findById(post.userId);
       const formattedPost: Record<string, any> = {
@@ -235,15 +259,44 @@ export class PostController {
 
       // pagination
 
-      const pageNumber =parseInt(request.query.page as string) || 1; 
-      const pageSize = 5; 
+      const pageNumber = parseInt(request.query.page as string) || 1;
+      const pageSize = 5;
       const startIndex = (pageNumber - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const posts = usersPosts.slice(startIndex, endIndex);
 
-      response.status(200).json({ posts, current: posts.length, total:usersPosts.length });
+      response
+        .status(200)
+        .json({ posts, current: posts.length, total: usersPosts.length });
     } catch (error) {
       response.status(500).json({ error: error });
+    }
+  }
+
+  static async deletePost(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const postId = request.params.postId;
+
+      const post = await postSchema.findById(
+        new mongoose.Types.ObjectId(postId)
+      );
+      if (!post) return response.status(404).send("Post not found");
+
+      const comments = post.comments;
+      comments.forEach(async (comment) => {
+        await commentSchema.findByIdAndDelete(comment._id);
+      });
+
+      await postSchema.findByIdAndDelete(postId);
+
+      return response
+        .status(200)
+        .json({ message: "Post deleted successfully" });
+    } catch (error) {
+      return response.status(500).json({ message: error });
     }
   }
 }

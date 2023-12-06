@@ -21,6 +21,7 @@ export interface IPost {
   userId: string;
   content: string;
   type: "text" | "audio";
+  audioFilePath:string
   likes: string[];
   comments: mongoose.Types.ObjectId[];
   createdAt: Date;
@@ -41,6 +42,10 @@ export const postSchema = mongoose.model(
       type: String,
       enum: ["text", "audio"],
       required: true,
+    },
+    audioFilePath:{
+      type:String,
+      required:false
     },
     likes: [
       {
