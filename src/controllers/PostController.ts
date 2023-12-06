@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import { IComment, commentSchema, postSchema } from "../models/PostModel";
 import { userSchema } from "../models/UserModel";
 import { commentNotification, likeNotification } from "../utility/notification";
-// import { getPosts } from "../utility/homeScreen";
+import path from "path";
+const fs = require("fs").promises;
 
 export class PostController {
   /**
@@ -16,18 +17,24 @@ export class PostController {
     try {
       const { userId, content, type } = request.body;
       const audioFile = request.file; // Get the uploaded file
-  
+
       // Check if both audio and text types are present
       if (audioFile && type === "text") {
-        return response.status(400).json({ error: "Cannot add both audio and text posts simultaneously" });
+        return response
+          .status(400)
+          .json({
+            error: "Cannot add both audio and text posts simultaneously",
+          });
       }
-  
+
+      const basePath = "C:\\EchoBackend";
+
       if (type === "audio" && audioFile) {
         const newPost = new postSchema({
           userId,
           content,
           type,
-          audioFilePath: audioFile.path,
+          audioFilePath: path.join(basePath, "audio", audioFile.filename),
         });
         await newPost.save();
       } else if (type === "text") {
@@ -39,9 +46,11 @@ export class PostController {
         });
         await newPost.save();
       } else {
-        return response.status(400).json({ error: "Invalid post type or missing file" });
+        return response
+          .status(400)
+          .json({ error: "Invalid post type or missing file" });
       }
-  
+
       return response
         .status(200)
         .json({ message: "Post created successfully" });
@@ -49,7 +58,6 @@ export class PostController {
       response.status(500).json({ error: "Internal server error" });
     }
   }
-  
 
   /**
    * Process a user's request to like a post.
@@ -199,6 +207,7 @@ export class PostController {
         isFollowed: false,
         postId: post._id,
         content: post.content,
+        audioPath: post.audioFilePath,
         likes: post.likes,
         comments: post.comments,
         createdAt: post.createdAt,
@@ -245,6 +254,7 @@ export class PostController {
             isFollowed: true,
             postId: post._id,
             content: post.content,
+            audioPath: post.audioFilePath,
             likes: post.likes,
             comments: post.comments,
             createdAt: post.createdAt,
@@ -283,9 +293,18 @@ export class PostController {
       const post = await postSchema.findById(
         new mongoose.Types.ObjectId(postId)
       );
+
       if (!post) return response.status(404).send("Post not found");
 
+      if (post.type === "audio") {
+        const audioFilePath = post.audioFilePath;
+        
+        if (audioFilePath) {
+          await fs.unlink(audioFilePath);
+        }
+      }
       const comments = post.comments;
+
       comments.forEach(async (comment) => {
         await commentSchema.findByIdAndDelete(comment._id);
       });

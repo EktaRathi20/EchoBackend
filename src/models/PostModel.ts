@@ -36,7 +36,7 @@ export const postSchema = mongoose.model(
     },
     content: {
       type: String,
-      required: true,
+      required: false,
     },
     type: {
       type: String,

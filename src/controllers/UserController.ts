@@ -24,8 +24,8 @@ export class UserController {
       };
 
       userPosts.forEach((post) => {
-        const { content, likes, comments, type, _id } = post;
-        const formattedPost = { postId: _id, content, likes, comments };
+        const { content, likes, comments, type, _id, audioFilePath } = post;
+        const formattedPost = { postId: _id, content, audioFilePath, likes, comments };
 
         formattedPosts[type].push(formattedPost);
       });
