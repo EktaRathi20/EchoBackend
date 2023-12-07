@@ -6,6 +6,7 @@ import { userRoute } from "./routes/UserRoute";
 import * as dotenv from 'dotenv';
 import { authRoute } from "./routes/AuthRoute";
 import { postRoute } from "./routes/PostRoute";
+import { chatRoute } from "./routes/ChatRoute";
 dotenv.config();
 
 const app: express.Application = express();
@@ -20,6 +21,7 @@ app.use(routeMiddleware);
 app.use('/api',authRoute);
 app.use('/api', userRoute);
 app.use('/api', postRoute);
+app.use('/api', chatRoute);
 
 app.listen(port, host, async () => {
     await connectToDatabase();
