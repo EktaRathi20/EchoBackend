@@ -186,6 +186,39 @@ export class UserController {
   }
 
   /**
+   * delete profile photo
+   */
+  static async deleteProfilePhoto(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      console.log(request);
+      const userId = request.params.userId;
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      if (user.profileImage) {
+        await fs.unlink(user.profileImage);
+        // Remove the profileImage path from userSchema
+        user.profileImage = "";
+
+        // Save the updated user document
+        await user.save();
+      }
+
+      return response
+        .status(200)
+        .json({ message: "Profile photo deleted successfully" });
+    } catch (error) {
+      response.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+
+  /**
    * Handles the search for users by name or username.
    */
   static async searchUsers(
@@ -340,7 +373,6 @@ export class UserController {
         // Delete all chat messages within the chat room
         await chatSchema.deleteMany({ roomId: room.id });
       }
-
 
       await userSchema.findByIdAndDelete(userId);
       return response.json({ message: "User account deleted successfully" });

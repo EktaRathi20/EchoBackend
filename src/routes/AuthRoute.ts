@@ -8,4 +8,4 @@ authRoute.post("/login", AuthController.login);
 authRoute.post("/refreshToken", AuthController.refreshToken);
 authRoute.post("/forgotPassword", AuthController.forgotPassword);
 authRoute.post("/verifyOTP", AuthController.verifyOTP);
-authRoute.post("/resetPassword", AuthController.resetPassword);
+authRoute.put("/resetPassword", AuthController.resetPassword);

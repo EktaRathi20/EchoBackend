@@ -10,11 +10,12 @@ const upload = multer({ storage });
 userRoute.get("/getUserByID/:id", UserController.getUserByID);
 userRoute.post("/follow/:userId/:followerId", UserController.followUser);
 userRoute.post("/unfollow/:userId/:followerId", UserController.unfollowUser);
-userRoute.post("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
+userRoute.put("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
 userRoute.get("/searchUser", UserController.searchUsers);
-userRoute.post("/changeUsername/:userId", UserController.changeUsername);
-userRoute.post("/changeName/:userId", UserController.changeName);
-userRoute.post("/deleteUser/:userId", UserController.deleteUser);
+userRoute.put("/changeUsername/:userId", UserController.changeUsername);
+userRoute.put("/changeName/:userId", UserController.changeName);
+userRoute.delete("/deleteUser/:userId", UserController.deleteUser);
+userRoute.delete("/deleteProfilePhoto/:userId", UserController.deleteProfilePhoto);
 
 /**
  * notification route

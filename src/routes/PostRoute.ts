@@ -11,6 +11,6 @@ postRoute.post("/createPost", upload.single('audio'), PostController.createPost)
 postRoute.post("/likePost/:postId", PostController.likePost);
 postRoute.post("/unlikePost/:postId", PostController.unlikePost);
 postRoute.post('/commentPost/:postId', PostController.addComment);
-postRoute.post('/deletePostComment/:postId/:commentId', PostController.removeComment);
+postRoute.delete('/deletePostComment/:postId/:commentId', PostController.removeComment);
 postRoute.get('/getAllPost/:userId', PostController.getAllPost);
-postRoute.post('/deletePost/:postId',PostController.deletePost)
+postRoute.delete('/deletePost/:postId',PostController.deletePost)
