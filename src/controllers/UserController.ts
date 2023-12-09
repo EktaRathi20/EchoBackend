@@ -193,7 +193,6 @@ export class UserController {
     response: express.Response
   ) {
     try {
-      console.log(request);
       const userId = request.params.userId;
       const user = await userSchema.findById(userId);
 
