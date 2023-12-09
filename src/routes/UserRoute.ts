@@ -16,6 +16,9 @@ userRoute.put("/changeUsername/:userId", UserController.changeUsername);
 userRoute.put("/changeName/:userId", UserController.changeName);
 userRoute.delete("/deleteUser/:userId", UserController.deleteUser);
 userRoute.delete("/deleteProfilePhoto/:userId", UserController.deleteProfilePhoto);
+userRoute.get("/getFollowerList/:userId", UserController.getFollowerList);
+userRoute.get("/getFollowingList/:userId", UserController.getFollowerList);
+
 
 /**
  * notification route

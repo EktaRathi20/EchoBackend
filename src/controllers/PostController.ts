@@ -24,6 +24,12 @@ export class PostController {
       const { userId, content, type } = request.body;
       const audioFile = request.file; // Get the uploaded file
 
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
       // Check if both audio and text types are present
       if (audioFile && type === "text") {
         return response.status(400).json({

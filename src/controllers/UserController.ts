@@ -1,11 +1,12 @@
 import express from "express";
-import { IUserDb, userSchema } from "../models/UserModel";
+import { IUser, IUserDb, userSchema } from "../models/UserModel";
 import mongoose from "mongoose";
 import path from "path";
 import { IPostDb, postSchema } from "../models/PostModel";
 import { followNotification } from "../utility/notification";
 import { PostController } from "./PostController";
 import { chatRoomSchema, chatSchema } from "../models/ChatModel";
+import { notificationSchema } from "../models/NotificationModel";
 const fs = require("fs").promises;
 export class UserController {
   /**
@@ -236,10 +237,6 @@ export class UserController {
         $or: [{ firstName: regex }, { lastName: regex }, { username: regex }],
       });
 
-      // const filteredResults = results.filter(
-      //   (user) => user._id.toString() !== request.params.userId
-      // );
-
       const modifiedResults = results.map((user) => ({
         id: user._id,
         firstName: user.firstName,
@@ -373,10 +370,132 @@ export class UserController {
         await chatSchema.deleteMany({ roomId: room.id });
       }
 
+      const notifications = await notificationSchema.find({
+        $or: [{ userId: user.id }, { followerId: user.id }],
+      });
+
+      const followerIds = user.followers;
+      const followingIds = user.following;
+
+      if (followerIds) {
+        for (const followerId of followerIds) {
+          const follower = await userSchema.findById(followerId);
+          if (follower) {
+            // Remove the user being deleted from the follower's following list
+            follower.following = follower?.following?.filter(
+              (id) => !id.equals(userId)
+            );
+            for (const notification of notifications) {
+              follower.notifications = follower.notifications?.filter(
+                (id) => id != notification.id
+              );
+            }
+            await follower.save();
+          }
+        }
+      }
+
+      if (followingIds) {
+        for (const followingId of followingIds) {
+          const following = await userSchema.findById(followingId);
+          if (following) {
+            // Remove the user being deleted from the following user's follower list
+            following.followers = following?.followers?.filter(
+              (id) => !id.equals(userId)
+            );
+            for (const notification of notifications) {
+              following.notifications = following.notifications?.filter(
+                (id) => id != notification.id
+              );
+            }
+            await following.save();
+          }
+        }
+      }
+
+      await notificationSchema.deleteMany( {$or: [{ userId: user.id }, { followerId: user.id }]});
       await userSchema.findByIdAndDelete(userId);
       return response.json({ message: "User account deleted successfully" });
     } catch (error) {
       return response.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle - getFollowerList
+   */
+
+  static async getFollowerList(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const existingUser = await userSchema
+        .findById(new mongoose.Types.ObjectId(userId))
+        .select("-password -__v -_id");
+
+      if (!existingUser) {
+        return response.status(404).json({ error: "User not found" });
+      }
+
+      const followerIds = existingUser.followers;
+      const followerDetails = await userSchema
+        .find({ _id: { $in: followerIds } })
+        .select("firstName lastName username profileImage following");
+
+      const modifiedResults = followerDetails?.map((user) => ({
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        profileImage: user.profileImage,
+        isFollowing: user.following?.includes(
+          new mongoose.Types.ObjectId(userId)
+        ),
+      }));
+
+      response.status(200).json(modifiedResults);
+    } catch (error) {
+      return response.status(500).json("Internal Server Error");
+    }
+  }
+
+  /**
+   * Handle - getFollowingList
+   */
+
+  static async getFollowingList(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const existingUser = await userSchema
+        .findById(new mongoose.Types.ObjectId(userId))
+        .select("-password -__v -_id");
+
+      if (!existingUser) {
+        return response.status(404).json({ error: "User not found" });
+      }
+
+      const followerIds = existingUser.following;
+      const followerDetails = await userSchema
+        .find({ _id: { $in: followerIds } })
+        .select("firstName lastName username profileImage following");
+
+      const modifiedResults = followerDetails?.map((user) => ({
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        profileImage: user.profileImage,
+        isFollowing: true,
+      }));
+
+      response.status(200).json(modifiedResults);
+    } catch (error) {
+      return response.status(500).json("Internal Server Error");
     }
   }
 }
