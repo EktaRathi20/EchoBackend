@@ -26,7 +26,9 @@ export interface IPost {
   comments: mongoose.Types.ObjectId[];
   createdAt: Date;
 }
-
+export interface IPostDb extends IPost {
+  id: mongoose.Schema.Types.ObjectId;
+}
 export const postSchema = mongoose.model(
   "Posts",
   new mongoose.Schema<IPost>({

@@ -1,9 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
-import { IComment, commentSchema, postSchema } from "../models/PostModel";
-import { userSchema } from "../models/UserModel";
+import {
+  IComment,
+  IPostDb,
+  commentSchema,
+  postSchema,
+} from "../models/PostModel";
+import { IUser, IUserDb, userSchema } from "../models/UserModel";
 import { commentNotification, likeNotification } from "../utility/notification";
 import path from "path";
+import { notificationSchema } from "../models/NotificationModel";
 const fs = require("fs").promises;
 
 export class PostController {
@@ -20,11 +26,9 @@ export class PostController {
 
       // Check if both audio and text types are present
       if (audioFile && type === "text") {
-        return response
-          .status(400)
-          .json({
-            error: "Cannot add both audio and text posts simultaneously",
-          });
+        return response.status(400).json({
+          error: "Cannot add both audio and text posts simultaneously",
+        });
       }
 
       const basePath = "C:\\EchoBackend";
@@ -193,6 +197,9 @@ export class PostController {
     }
   }
 
+  /**
+   * generic fucntion for getting posts
+   */
   static getPosts = async () => {
     const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
     const totalPost = [];
@@ -283,6 +290,9 @@ export class PostController {
     }
   }
 
+  /**
+   * Handle - delete post
+   */
   static async deletePost(
     request: express.Request,
     response: express.Response
@@ -296,26 +306,56 @@ export class PostController {
 
       if (!post) return response.status(404).send("Post not found");
 
-      if (post.type === "audio") {
-        const audioFilePath = post.audioFilePath;
-        
-        if (audioFilePath) {
-          await fs.unlink(audioFilePath);
-        }
-      }
-      const comments = post.comments;
+      const message = await PostController.delete(post as IPostDb);
 
-      comments.forEach(async (comment) => {
-        await commentSchema.findByIdAndDelete(comment._id);
-      });
-
-      await postSchema.findByIdAndDelete(postId);
-
-      return response
-        .status(200)
-        .json({ message: "Post deleted successfully" });
+      return response.status(200).json({ message: message.message });
     } catch (error) {
       return response.status(500).json({ message: error });
     }
   }
+
+  /**
+   * generic delete post function
+   */
+  static delete = async (post: IPostDb) => {
+    if (post.type === "audio") {
+      const audioFilePath = post.audioFilePath;
+
+      if (audioFilePath) {
+        await fs.unlink(audioFilePath);
+      }
+    }
+    const comments = post.comments;
+
+    comments.forEach(async (comment: any) => {
+      await commentSchema.findByIdAndDelete(comment._id);
+    });
+
+    const notifications = await notificationSchema.find({ postId: post.id });
+    const user = await userSchema.findById(post.userId);
+
+    if (user) {
+      // Remove notification IDs from the user's notifications array
+      for (const notification of notifications) {
+        const index = user.notifications.indexOf(notification.id.toString());
+        if (index !== -1) {
+          user.notifications.splice(index, 1);
+        }
+      }
+
+      await user.save(); // Save the updated user document
+    }
+
+    // Delete associated notifications
+    for (const notification of notifications) {
+      await notificationSchema.findByIdAndDelete(notification.id);
+    }
+
+    await user?.save(); // Save the updated user document
+
+    // Delete the post itself
+    await postSchema.findByIdAndDelete(post.id);
+
+    return { message: "post deleted successfully" };
+  };
 }

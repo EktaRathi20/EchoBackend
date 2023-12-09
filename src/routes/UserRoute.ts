@@ -12,6 +12,9 @@ userRoute.post("/follow/:userId/:followerId", UserController.followUser);
 userRoute.post("/unfollow/:userId/:followerId", UserController.unfollowUser);
 userRoute.post("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
 userRoute.get("/searchUser", UserController.searchUsers);
+userRoute.post("/changeUsername/:userId", UserController.changeUsername);
+userRoute.post("/changeName/:userId", UserController.changeName);
+userRoute.post("/deleteUser/:userId", UserController.deleteUser);
 
 /**
  * notification route

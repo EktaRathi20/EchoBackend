@@ -1,9 +1,11 @@
 import express from "express";
-import { userSchema } from "../models/UserModel";
+import { IUserDb, userSchema } from "../models/UserModel";
 import mongoose from "mongoose";
 import path from "path";
-import { postSchema } from "../models/PostModel";
+import { IPostDb, postSchema } from "../models/PostModel";
 import { followNotification } from "../utility/notification";
+import { PostController } from "./PostController";
+import { chatRoomSchema, chatSchema } from "../models/ChatModel";
 const fs = require("fs").promises;
 export class UserController {
   /**
@@ -25,7 +27,13 @@ export class UserController {
 
       userPosts.forEach((post) => {
         const { content, likes, comments, type, _id, audioFilePath } = post;
-        const formattedPost = { postId: _id, content, audioFilePath, likes, comments };
+        const formattedPost = {
+          postId: _id,
+          content,
+          audioFilePath,
+          likes,
+          comments,
+        };
 
         formattedPosts[type].push(formattedPost);
       });
@@ -211,6 +219,131 @@ export class UserController {
         ),
       }));
       return response.json(modifiedResults);
+    } catch (error) {
+      return response.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  /* Settings */
+  /**
+   * Handle - change username
+   */
+  static async changeUsername(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      // Extract the fields to update from the request body
+      const { username } = request.body;
+
+      // Create an object with the fields to update
+      const updateFields: Partial<IUserDb> = {};
+      if (username) updateFields.username = username;
+
+      // Update the user information in the database
+      const updatedUser = await userSchema.findByIdAndUpdate(
+        userId,
+        updateFields,
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        return response.status(404).json({ error: "User not found" });
+      }
+
+      // Send the updated user information as a response
+
+      await updatedUser.save();
+      return response.json({ message: "username updated successfully" });
+    } catch (error) {
+      return response.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle - change Name
+   */
+  static async changeName(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      // Extract the fields to update from the request body
+      const { firstName, lastName } = request.body;
+
+      // Create an object with the fields to update
+      const updateFields: Partial<IUserDb> = {};
+      if (firstName) updateFields.firstName = firstName;
+      if (lastName) updateFields.lastName = lastName;
+
+      // Update the user information in the database
+      const updatedUser = await userSchema.findByIdAndUpdate(
+        userId,
+        updateFields,
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        return response.status(404).json({ error: "User not found" });
+      }
+
+      await updatedUser.save();
+      // Send the updated user information as a response
+      return response.json({ message: "Name updated successfully" });
+    } catch (error) {
+      return response.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+
+  /**
+   * Handle - delete user
+   */
+  static async deleteUser(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const userId = request.params.userId;
+
+      const user = await userSchema.findById(userId);
+
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      const posts = await postSchema.find({ userId });
+      for (const post of posts) {
+        // Delete post and remove associated comments
+        await PostController.delete(post as IPostDb);
+      }
+
+      const chatRooms = await chatRoomSchema.find({
+        $or: [{ senderId: userId }, { receiverId: userId }],
+      });
+
+      for (const room of chatRooms) {
+        // Delete all chat messages within the chat room
+        await chatSchema.deleteMany({ roomId: room.id });
+      }
+
+
+      await userSchema.findByIdAndDelete(userId);
+      return response.json({ message: "User account deleted successfully" });
     } catch (error) {
       return response.status(500).json({ error: "Internal Server Error" });
     }
