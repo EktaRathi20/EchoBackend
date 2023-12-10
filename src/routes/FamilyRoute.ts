@@ -14,4 +14,6 @@ familyRoute.post(
   upload.single("audio"),
   FamilyController.createFamilyPost
 );
-familyRoute.get('/getAllFamilyPost/:familyId', FamilyController.getFamilyPost);
+familyRoute.get('/getAllFamilyPost', FamilyController.getFamilyPost);
+familyRoute.get('/getFamilyMembers/:familyId', FamilyController.getFamilyMembers)
+familyRoute.delete('/removeFamilyMember', FamilyController.removeFamilyMember)
