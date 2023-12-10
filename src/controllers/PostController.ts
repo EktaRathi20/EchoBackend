@@ -207,7 +207,7 @@ export class PostController {
    * generic fucntion for getting posts
    */
   static getPosts = async () => {
-    const allPosts = await postSchema.find({}).sort({ createdAt: -1 });
+    const allPosts = await postSchema.find({ familyRoomId: { $exists: false } }).sort({ createdAt: -1 });
     const totalPost = [];
 
     for (const post of allPosts) {
@@ -255,6 +255,7 @@ export class PostController {
       } else {
         const followingPosts = await postSchema.find({
           userId: { $in: userFollowing },
+          familyRoomId: { $exists: false },
         });
 
         for (const post of followingPosts) {

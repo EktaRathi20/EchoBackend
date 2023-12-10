@@ -1,6 +1,13 @@
 import express from "express";
-import { FamilyRoom } from "../models/FamilyModel";
+import {
+  familyRoomSchema,
+  IFamilyRoom,
+  IFamilyRoomDb,
+} from "../models/FamilyModel";
 import { userSchema } from "../models/UserModel";
+import { postSchema } from "../models/PostModel";
+import path from "path";
+import mongoose from "mongoose";
 
 export class FamilyController {
   /**
@@ -13,9 +20,12 @@ export class FamilyController {
     try {
       const userId = request.params.userId;
 
-      const familyRooms = await FamilyRoom.find({
-        $or: [{ creatorId: userId }, { members: { $in: [userId] } }]
-      }, "_id familyName");
+      const familyRooms = await familyRoomSchema.find(
+        {
+          $or: [{ creatorId: userId }, { members: { $in: [userId] } }],
+        },
+        "_id familyName"
+      );
 
       return response.status(200).json({ familyRooms });
     } catch (error) {
@@ -45,13 +55,14 @@ export class FamilyController {
       if (!familyName) {
         return response.status(400).json({ message: "provide family name" });
       }
-      const family = await FamilyRoom.create({
+      const family = await familyRoomSchema.create({
         creatorId: userId,
         accessKey: accessKey,
         familyName: familyName,
       });
-      return response.status(200).json({ message: "Family room created successfully", family });
-
+      return response
+        .status(200)
+        .json({ message: "Family room created successfully", family });
     } catch (error) {
       return response.status(500).json({ error: "Internal server error" });
     }
@@ -67,7 +78,7 @@ export class FamilyController {
     try {
       const { userId, familyName, accessKey } = request.body;
 
-      const familyRoom = await FamilyRoom.findOne({
+      const familyRoom = await familyRoomSchema.findOne({
         familyName: familyName,
         accessKey: accessKey,
       });
@@ -100,18 +111,18 @@ export class FamilyController {
     response: express.Response
   ) {
     try {
-        const roomId = request.params.roomId;
-        const familyRoom = await FamilyRoom.findById(roomId);
-        if(!familyRoom){
-            return response.status(400).json({ error: "family room doesn't exist" });
-        }
-        return response.status(200).json({familyRoom});
-
+      const roomId = request.params.roomId;
+      const familyRoom = await familyRoomSchema.findById(roomId);
+      if (!familyRoom) {
+        return response
+          .status(400)
+          .json({ error: "family room doesn't exist" });
+      }
+      return response.status(200).json({ familyRoom });
     } catch (error) {
       return response.status(500).json({ error: "Internal server error" });
     }
   }
-
 
   /**
    * get all family room post
@@ -121,6 +132,21 @@ export class FamilyController {
     response: express.Response
   ) {
     try {
+      const familyId = request.params.familyId;
+
+      const family = await familyRoomSchema.find(
+        new mongoose.Types.ObjectId(familyId)
+      );
+      console.log(new mongoose.Types.ObjectId(familyId));
+      if (!family) {
+        return response
+          .status(400)
+          .json({ message: "family room doesn't exist" });
+      }
+
+      const posts = await postSchema.find({ familyRoomId: familyId });
+
+      return response.status(200).json(posts);
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
@@ -135,6 +161,57 @@ export class FamilyController {
     response: express.Response
   ) {
     try {
+      const { userId, content, type, familyroomId } = request.body;
+      const audioFile = request.file; // Get the uploaded file
+      const user = await userSchema.findById(userId);
+      const family = await familyRoomSchema.findOne({ _id: familyroomId });
+      if (!user) {
+        return response.status(404).json({ message: "User not found" });
+      }
+
+      if (!family) {
+        return response.status(404).json({ message: "Family room not found" });
+      }
+
+      // Check if both audio and text types are present
+      if (audioFile && type === "text") {
+        return response.status(400).json({
+          error: "Cannot add both audio and text posts simultaneously",
+        });
+      }
+
+      const basePath = "C:\\EchoBackend";
+      let newPost;
+
+      if (type === "audio" && audioFile) {
+        newPost = new postSchema({
+          userId,
+          content,
+          type,
+          audioFilePath: path.join(basePath, "audio", audioFile.filename),
+          familyRoomId: familyroomId,
+        });
+      } else if (type === "text") {
+        newPost = new postSchema({
+          userId,
+          content,
+          type,
+          audioFilePath: null,
+          familyRoomId: familyroomId,
+        });
+      } else {
+        return response
+          .status(400)
+          .json({ error: "Invalid post type or missing file" });
+      }
+
+      await newPost.save();
+      family.posts.push(newPost.id);
+      await family.save(); // Save the updated family room
+
+      return response
+        .status(200)
+        .json({ message: "Post created successfully" });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }

@@ -1,8 +1,17 @@
 import mongoose from "mongoose";
-
-export const FamilyRoom = mongoose.model(
-  "FamilyRoom",
-  new mongoose.Schema({
+export interface IFamilyRoom {
+  creatorId:mongoose.Schema.Types.ObjectId,
+  accessKey:String,
+  familyName:String,
+  members:mongoose.Schema.Types.ObjectId[],
+  posts:mongoose.Schema.Types.ObjectId[]
+}
+export interface IFamilyRoomDb extends IFamilyRoom{
+  id: mongoose.Schema.Types.ObjectId;
+}
+export const familyRoomSchema = mongoose.model(
+  "familySchema",
+  new mongoose.Schema<IFamilyRoom>({
     creatorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // Reference to the User model
