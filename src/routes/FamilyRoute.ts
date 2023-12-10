@@ -7,7 +7,7 @@ export const familyRoute: express.Router = express.Router();
 
 familyRoute.get("/getFamilyList/:userId", FamilyController.getFamilyRooms);
 familyRoute.post("/createFamilyRoom", FamilyController.createFamilyRoom);
-familyRoute.get("/joinFamilyRoom", FamilyController.joinFamilyRoom);
+familyRoute.post("/joinFamilyRoom", FamilyController.joinFamilyRoom);
 familyRoute.get("/getFamilyById/:roomId", FamilyController.getFamilyById);
 familyRoute.post(
   "/createFamilyPost",
@@ -17,3 +17,5 @@ familyRoute.post(
 familyRoute.get('/getAllFamilyPost', FamilyController.getFamilyPost);
 familyRoute.get('/getFamilyMembers/:familyId', FamilyController.getFamilyMembers)
 familyRoute.delete('/removeFamilyMember', FamilyController.removeFamilyMember)
+familyRoute.put('/updateFamilyName', FamilyController.updateFamilyName);
+familyRoute.delete('/deleteFamily', FamilyController.deleteFamilyRoom);

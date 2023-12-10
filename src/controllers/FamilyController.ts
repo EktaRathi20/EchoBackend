@@ -1,9 +1,10 @@
 import express from "express";
 import { familyRoomSchema } from "../models/FamilyModel";
 import { userSchema } from "../models/UserModel";
-import { postSchema } from "../models/PostModel";
+import { IPostDb, postSchema } from "../models/PostModel";
 import path from "path";
 import mongoose from "mongoose";
+import { PostController } from "./PostController";
 
 export class FamilyController {
   /**
@@ -288,19 +289,16 @@ export class FamilyController {
         });
       }
 
-      if (user._id.toString() === family.creatorId.toString()) 
-      {
-        if (!family.members.includes(new mongoose.Types.ObjectId(removeId))) 
-        {
+      if (user._id.toString() === family.creatorId.toString()) {
+        if (!family.members.includes(new mongoose.Types.ObjectId(removeId))) {
           return response
             .status(404)
             .json({ message: "member does not exists" });
-        } 
-        else {
+        } else {
           family.members = family.members.filter(
             (id) => id.toString() != removeUser._id.toString()
           );
-            console.log(family.members)
+          console.log(family.members);
           family.save();
 
           return response
@@ -311,7 +309,89 @@ export class FamilyController {
         return response.status(400).json({ message: "user is not admin" });
       }
     } catch (error) {
-      response.status(500).json({ error: "Internal server error" });
+      return response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * update family name
+   */
+  static async updateFamilyName(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { familyId, newName } = request.body;
+
+      const family = await familyRoomSchema.findById(
+        new mongoose.Types.ObjectId(familyId)
+      );
+      if (!family) {
+        return response
+          .status(400)
+          .json({ message: "family room doesn't exist" });
+      }
+
+      family.familyName = newName;
+      family.save();
+      return response
+        .status(200)
+        .json({ message: "name changed successfully" });
+    } catch (error) {
+      return response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * delete family room
+   */
+
+  static async deleteFamilyRoom(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const { familyId, userId } = request.body;
+      const family = await familyRoomSchema.findById(
+        new mongoose.Types.ObjectId(familyId)
+      );
+      if (!family) {
+        return response
+          .status(400)
+          .json({ message: "family room doesn't exist" });
+      }
+
+      const user = await userSchema.findById(
+        new mongoose.Types.ObjectId(userId)
+      );
+
+      if (!user) {
+        return response.status(400).json({ message: "user doesn't exist" });
+      }
+
+      if (user._id.toString() === family.creatorId.toString()) {
+        // admin
+        const Familyposts = family.posts;
+        for (const fPost of Familyposts) {
+          const post = await postSchema.findById(
+            new mongoose.Types.ObjectId(fPost)
+          );
+
+          if (!post) return response.status(404).send("Post not found");
+
+          const message = await PostController.delete(post as IPostDb);
+        }
+        await familyRoomSchema.findByIdAndDelete(family.id);
+        return response
+          .status(200)
+          .json({ message: "family deleted successfully" });
+      } else {
+        return response
+          .status(400)
+          .json({ message: "user is not creator of family" });
+      }
+    } catch (error) {
+      return response.status(500).json({ error: "internal server error" });
     }
   }
 }
