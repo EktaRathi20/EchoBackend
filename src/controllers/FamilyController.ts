@@ -42,15 +42,15 @@ export class FamilyController {
 
       const user = await userSchema.findById(userId);
       if (!user) {
-        return response.status(400).json({ message: "user not found" });
+        return response.status(400).json({ error: "user not found" });
       }
 
       if (!accessKey) {
-        return response.status(400).json({ message: "provide access key" });
+        return response.status(400).json({ error: "provide access key" });
       }
 
       if (!familyName) {
-        return response.status(400).json({ message: "provide family name" });
+        return response.status(400).json({ error: "provide family name" });
       }
       const family = await familyRoomSchema.create({
         creatorId: userId,
@@ -137,7 +137,7 @@ export class FamilyController {
       if (!family) {
         return response
           .status(400)
-          .json({ message: "family room doesn't exist" });
+          .json({ error: "family room doesn't exist" });
       }
 
       const user = await userSchema.findById(
@@ -145,7 +145,7 @@ export class FamilyController {
       );
 
       if (!user) {
-        return response.status(400).json({ message: "user doesn't exist" });
+        return response.status(400).json({ error: "user doesn't exist" });
       }
 
       const posts = await postSchema.find({ familyRoomId: familyId });
@@ -170,11 +170,11 @@ export class FamilyController {
       const user = await userSchema.findById(userId);
       const family = await familyRoomSchema.findOne({ _id: familyroomId });
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       if (!family) {
-        return response.status(404).json({ message: "Family room not found" });
+        return response.status(404).json({ error: "Family room not found" });
       }
 
       // Check if both audio and text types are present
@@ -238,7 +238,7 @@ export class FamilyController {
       if (!family) {
         return response
           .status(400)
-          .json({ message: "family room doesn't exist" });
+          .json({ error: "family room doesn't exist" });
       }
 
       const members = family.members;
@@ -268,7 +268,7 @@ export class FamilyController {
       if (!family) {
         return response
           .status(400)
-          .json({ message: "family room doesn't exist" });
+          .json({ error: "family room doesn't exist" });
       }
 
       const user = await userSchema.findById(
@@ -276,7 +276,7 @@ export class FamilyController {
       );
 
       if (!user) {
-        return response.status(400).json({ message: "user doesn't exist" });
+        return response.status(400).json({ error: "user doesn't exist" });
       }
 
       const removeUser = await userSchema.findById(
@@ -285,7 +285,7 @@ export class FamilyController {
 
       if (!removeUser) {
         return response.status(400).json({
-          message: "member you want to remove doesn't exist as user in echo",
+          error: "member you want to remove doesn't exist as user in echo",
         });
       }
 
@@ -293,7 +293,7 @@ export class FamilyController {
         if (!family.members.includes(new mongoose.Types.ObjectId(removeId))) {
           return response
             .status(404)
-            .json({ message: "member does not exists" });
+            .json({ error: "member does not exists" });
         } else {
           family.members = family.members.filter(
             (id) => id.toString() != removeUser._id.toString()
@@ -306,7 +306,7 @@ export class FamilyController {
             .json({ message: "member removed successfully" });
         }
       } else {
-        return response.status(400).json({ message: "user is not admin" });
+        return response.status(400).json({ error: "user is not admin" });
       }
     } catch (error) {
       return response.status(500).json({ error: "Internal server error" });
@@ -329,7 +329,7 @@ export class FamilyController {
       if (!family) {
         return response
           .status(400)
-          .json({ message: "family room doesn't exist" });
+          .json({ error: "family room doesn't exist" });
       }
 
       family.familyName = newName;
@@ -358,7 +358,7 @@ export class FamilyController {
       if (!family) {
         return response
           .status(400)
-          .json({ message: "family room doesn't exist" });
+          .json({ error: "family room doesn't exist" });
       }
 
       const user = await userSchema.findById(
@@ -366,7 +366,7 @@ export class FamilyController {
       );
 
       if (!user) {
-        return response.status(400).json({ message: "user doesn't exist" });
+        return response.status(400).json({ error: "user doesn't exist" });
       }
 
       if (user._id.toString() === family.creatorId.toString()) {
@@ -377,7 +377,7 @@ export class FamilyController {
             new mongoose.Types.ObjectId(fPost)
           );
 
-          if (!post) return response.status(404).send("Post not found");
+          if (!post) return response.status(404).json({error:"Post not found"});
 
           const message = await PostController.delete(post as IPostDb);
         }
@@ -388,7 +388,7 @@ export class FamilyController {
       } else {
         return response
           .status(400)
-          .json({ message: "user is not creator of family" });
+          .json({ error: "user is not creator of family" });
       }
     } catch (error) {
       return response.status(500).json({ error: "internal server error" });

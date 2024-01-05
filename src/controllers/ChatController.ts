@@ -42,7 +42,7 @@ export class ChatController {
         roomId: roomId,
       });
     } catch (error) {
-      return response.status(500).json({ message: "Internal server error" });
+      return response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -59,7 +59,7 @@ export class ChatController {
 
       return response.status(200).json(allChats);
     } catch (error) {
-      return response.status(500).json({ message: "Internal server error" });
+      return response.status(500).json({ error: "Internal server error" });
     }
   }
 
@@ -75,10 +75,10 @@ export class ChatController {
       if (allRoom.length > 0) {
         return response.status(200).json(allRoom);
       }else{
-        return response.status(404).json({message:"no record found"});
+        return response.status(404).json({error:"no record found"});
       }
     } catch (error) {
-      return response.status(500).json({ message: "Internal server error" });
+      return response.status(500).json({ error: "Internal server error" });
     }
   }
 

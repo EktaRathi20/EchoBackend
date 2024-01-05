@@ -106,7 +106,7 @@ export class AuthController {
             message: "token created successfully",
           });
         })
-        .catch((err) => response.status(400).json(err));
+        .catch((err) => response.status(400).json({ error: err }));
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }

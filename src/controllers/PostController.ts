@@ -6,7 +6,7 @@ import {
   commentSchema,
   postSchema,
 } from "../models/PostModel";
-import { IUser, IUserDb, userSchema } from "../models/UserModel";
+import { userSchema } from "../models/UserModel";
 import { commentNotification, likeNotification } from "../utility/notification";
 import path from "path";
 import { notificationSchema } from "../models/NotificationModel";
@@ -27,7 +27,7 @@ export class PostController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       // Check if both audio and text types are present
@@ -79,9 +79,9 @@ export class PostController {
       const post = await postSchema.findById(
         new mongoose.Types.ObjectId(postId)
       );
-      if (!post) return response.status(404).send("Post not found");
+      if (!post) return response.status(404).json({ error: "Post not found" });
       if (post.likes.includes(userId))
-        return response.status(200).json({ message: "Post already liked" });
+        return response.status(400).json({ error: "Post already liked" });
       else {
         // User has not liked the post, add the like
         post.likes.push(userId);
@@ -111,7 +111,7 @@ export class PostController {
       const post = await postSchema.findById(
         new mongoose.Types.ObjectId(postId)
       );
-      if (!post) return response.status(404).send("Post not found");
+      if (!post) return response.status(404).json({ error: "Post not found" });
       if (post.likes.includes(userId)) {
         const index = post.likes.indexOf(userId);
         post.likes.splice(index, 1);
@@ -122,8 +122,8 @@ export class PostController {
       }
 
       return response
-        .status(200)
-        .json({ message: "You haven't liked this post yet" });
+        .status(404)
+        .json({ error: "You haven't liked this post yet" });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
     }
@@ -143,7 +143,7 @@ export class PostController {
       const post = await postSchema.findById(
         new mongoose.Types.ObjectId(postId)
       );
-      if (!post) return response.status(404).send("Post not found");
+      if (!post) return response.status(404).json({ error: "Post not found" });
 
       const newCommentData: IComment = { userId, text };
 
@@ -180,13 +180,13 @@ export class PostController {
       const post = await postSchema.findById(
         new mongoose.Types.ObjectId(postId)
       );
-      if (!post) return response.status(404).send("Post not found");
+      if (!post) return response.status(404).json({ error: "Post not found" });
 
       const commentIndex = post.comments.findIndex(
         (comment) => comment.toString() === commentId
       );
       if (commentIndex === -1)
-        return response.status(404).send("Comment not found");
+        return response.status(404).json({ error: "Comment not found" });
 
       const deletedCommentId = post.comments.splice(commentIndex, 1)[0];
 
@@ -207,7 +207,9 @@ export class PostController {
    * generic fucntion for getting posts
    */
   static getPosts = async () => {
-    const allPosts = await postSchema.find({ familyRoomId: { $exists: false } }).sort({ createdAt: -1 });
+    const allPosts = await postSchema
+      .find({ familyRoomId: { $exists: false } })
+      .sort({ createdAt: -1 });
     const totalPost = [];
 
     for (const post of allPosts) {
@@ -311,13 +313,13 @@ export class PostController {
         new mongoose.Types.ObjectId(postId)
       );
 
-      if (!post) return response.status(404).send("Post not found");
+      if (!post) return response.status(404).json({ error: "Post not found" });
 
       const message = await PostController.delete(post as IPostDb);
 
       return response.status(200).json({ message: message.message });
     } catch (error) {
-      return response.status(500).json({ message: error });
+      return response.status(500).json({ error: error });
     }
   }
 

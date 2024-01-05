@@ -41,7 +41,7 @@ export class UserController {
 
       const existingUser = await userSchema
         .findById(new mongoose.Types.ObjectId(userId))
-        .select("-password -__v -_id");
+        .select("-password -__v");
 
       if (!existingUser) {
         return response.status(404).json({ error: "User not found" });
@@ -77,14 +77,14 @@ export class UserController {
       if (!user || !follower) {
         return response
           .status(404)
-          .json({ message: "User or follower not found" });
+          .json({ error: "User or follower not found" });
       }
 
       // Check if user is already being followed
       if (user.following?.includes(new mongoose.Types.ObjectId(follower.id))) {
         return response
           .status(400)
-          .json({ message: "User is already being followed" });
+          .json({ error: "User is already being followed" });
       }
 
       // Update user's followers and follower's following
@@ -97,7 +97,7 @@ export class UserController {
 
       return response.json({ message: "Successfully followed" });
     } catch (error) {
-      response.status(500).json({ message: "Internal Server Error" });
+      response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -119,7 +119,7 @@ export class UserController {
       if (!user || !follower) {
         return response
           .status(404)
-          .json({ message: "User or follower not found" });
+          .json({ error: "User or follower not found" });
       }
 
       // Remove follower and following references
@@ -135,7 +135,7 @@ export class UserController {
           (id) => id.toString() !== userId
         );
       } else {
-        return response.json({ message: "user already unfollowed" });
+        return response.json({ error: "user already unfollowed" });
       }
 
       await user.save();
@@ -143,7 +143,7 @@ export class UserController {
 
       return response.json({ message: "Successfully unfollowed" });
     } catch (error) {
-      response.status(500).json({ message: "Internal Server Error" });
+      response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -160,13 +160,13 @@ export class UserController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       const file = request.file;
 
       if (!file) {
-        return response.status(400).json({ message: "No file uploaded" });
+        return response.status(400).json({ error: "No file uploaded" });
       }
 
       const basePath = "C:\\EchoBackend";
@@ -182,7 +182,7 @@ export class UserController {
 
       response.json({ message: "Profile image updated successfully" });
     } catch (error) {
-      response.status(500).json({ message: "Internal Server Error" });
+      response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -198,7 +198,7 @@ export class UserController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       if (user.profileImage) {
@@ -214,7 +214,7 @@ export class UserController {
         .status(200)
         .json({ message: "Profile photo deleted successfully" });
     } catch (error) {
-      response.status(500).json({ message: "Internal Server Error" });
+      response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -247,7 +247,7 @@ export class UserController {
           new mongoose.Types.ObjectId(request.params.userId)
         ),
       }));
-      return response.json(modifiedResults);
+      return response.status(200).json(modifiedResults);
     } catch (error) {
       return response.status(500).json({ error: "Internal Server Error" });
     }
@@ -266,7 +266,7 @@ export class UserController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       // Extract the fields to update from the request body
@@ -309,7 +309,7 @@ export class UserController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       // Extract the fields to update from the request body
@@ -352,7 +352,7 @@ export class UserController {
       const user = await userSchema.findById(userId);
 
       if (!user) {
-        return response.status(404).json({ message: "User not found" });
+        return response.status(404).json({ error: "User not found" });
       }
 
       const posts = await postSchema.find({ userId });
@@ -413,7 +413,9 @@ export class UserController {
         }
       }
 
-      await notificationSchema.deleteMany( {$or: [{ userId: user.id }, { followerId: user.id }]});
+      await notificationSchema.deleteMany({
+        $or: [{ userId: user.id }, { followerId: user.id }],
+      });
       await userSchema.findByIdAndDelete(userId);
       return response.json({ message: "User account deleted successfully" });
     } catch (error) {
@@ -457,7 +459,7 @@ export class UserController {
 
       response.status(200).json(modifiedResults);
     } catch (error) {
-      return response.status(500).json("Internal Server Error");
+      return response.status(500).json({ error: "Internal Server Error" });
     }
   }
 
@@ -495,7 +497,7 @@ export class UserController {
 
       response.status(200).json(modifiedResults);
     } catch (error) {
-      return response.status(500).json("Internal Server Error");
+      return response.status(500).json({ error: "Internal Server Error" });
     }
   }
 }
