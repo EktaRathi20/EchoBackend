@@ -208,11 +208,16 @@ export class UserController {
 
         // Save the updated user document
         await user.save();
-      }
-
-      return response
+        return response
         .status(200)
         .json({ message: "Profile photo deleted successfully" });
+      }else{
+        return response
+        .status(404)
+        .json({ message: "No Profile photo." });
+      }
+
+
     } catch (error) {
       response.status(500).json({ error: "Internal Server Error" });
     }
