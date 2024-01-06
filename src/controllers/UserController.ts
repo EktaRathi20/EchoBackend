@@ -169,14 +169,14 @@ export class UserController {
         return response.status(400).json({ error: "No file uploaded" });
       }
 
-      const basePath = "C:\\EchoBackend\\uploads";
+      const basePath = "C:\\EchoBackend";
       // If user already has a profile image, delete the old file
       if (user.profileImage) {
         await fs.unlink(user.profileImage);
       }
 
       // Set the new profile image path and save the user
-      user.profileImage = path.join(basePath, file.filename);
+      user.profileImage = path.join(basePath,"uploads", file.filename);
       await user.save();
 
       response.json({ message: "Profile image updated successfully" });
