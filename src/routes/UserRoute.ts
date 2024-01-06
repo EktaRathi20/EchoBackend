@@ -10,7 +10,12 @@ const upload = multer({ storage });
 userRoute.get("/getUserByID/:id", UserController.getUserByID);
 userRoute.post("/follow/:userId/:followerId", UserController.followUser);
 userRoute.post("/unfollow/:userId/:followerId", UserController.unfollowUser);
-userRoute.put("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
+/** old-code */
+// userRoute.put("/uploadImg/:userId", upload.single("image"), UserController.updateProfileImage);
+
+/** new-code */
+userRoute.put("/uploadImg/:userId",UserController.updateProfileImage);
+
 userRoute.get("/searchUser", UserController.searchUsers);
 userRoute.put("/changeUsername/:userId", UserController.changeUsername);
 userRoute.put("/changeName/:userId", UserController.changeName);
