@@ -163,16 +163,7 @@ export class UserController {
         return response.status(404).json({ error: "User not found" });
       }
 
-      /** new-code */
-      const filePath = request.body.filePath;
-      if(!filePath) return response.status(404).json({error:"No file uploaded"});
-      user.profileImage = filePath;
-      await user.save();
-      response.json({ message: "Profile image updated successfully" });
-
-
-      /** old-code */
-      /*const file = request.file;
+      const file = request.file;
 
       if (!file) {
         return response.status(400).json({ error: "No file uploaded" });
@@ -188,7 +179,7 @@ export class UserController {
       user.profileImage = path.join(basePath, file.filename);
       await user.save();
 
-      response.json({ message: "Profile image updated successfully" });*/
+      response.json({ message: "Profile image updated successfully" });
     } catch (error) {
       response.status(500).json({ error: "Internal Server Error" });
     }
@@ -209,21 +200,7 @@ export class UserController {
         return response.status(404).json({ error: "User not found" });
       }
 
-      /** new-code */
       if (user.profileImage) {
-        user.profileImage = "";
-        await user.save();
-        return response
-        .status(200)
-        .json({ message: "Profile photo deleted successfully" });
-      }else{
-        return response
-        .status(404)
-        .json({ message: "No Profile photo." });
-      }
-
-      /** old-code */
-      /*if (user.profileImage) {
         await fs.unlink(user.profileImage);
         // Remove the profileImage path from userSchema
         user.profileImage = "";
@@ -231,15 +208,11 @@ export class UserController {
         // Save the updated user document
         await user.save();
         return response
-        .status(200)
-        .json({ message: "Profile photo deleted successfully" });
-      }else{
-        return response
-        .status(404)
-        .json({ message: "No Profile photo." });
-      }*/
-
-
+          .status(200)
+          .json({ message: "Profile photo deleted successfully" });
+      } else {
+        return response.status(404).json({ message: "No Profile photo." });
+      }
     } catch (error) {
       response.status(500).json({ error: "Internal Server Error" });
     }
