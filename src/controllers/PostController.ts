@@ -22,7 +22,11 @@ export class PostController {
   ) {
     try {
       const { userId, content, type } = request.body;
-      const audioFile = request.file; // Get the uploaded file
+      /** old-code */
+      // const audioFile = request.file; // Get the uploaded file 
+
+      /** new-code */
+      const audioFile = request.body.filePath;
 
       const user = await userSchema.findById(userId);
 
@@ -37,14 +41,15 @@ export class PostController {
         });
       }
 
-      const basePath = "C:\\EchoBackend";
+      // const basePath = "C:\\EchoBackend"; // old-code
 
       if (type === "audio" && audioFile) {
         const newPost = new postSchema({
           userId,
           content,
           type,
-          audioFilePath: path.join(basePath, "audio", audioFile.filename),
+          // audioFilePath: path.join(basePath, "audio", audioFile.filename), //old-code
+          audioFilePath:audioFile
         });
         await newPost.save();
       } else if (type === "text") {
@@ -327,13 +332,14 @@ export class PostController {
    * generic delete post function
    */
   static delete = async (post: IPostDb) => {
-    if (post.type === "audio") {
+    /** old-code */
+    /* if (post.type === "audio") {
       const audioFilePath = post.audioFilePath;
 
       if (audioFilePath) {
         await fs.unlink(audioFilePath);
       }
-    }
+    } */
     const comments = post.comments;
 
     comments.forEach(async (comment: any) => {

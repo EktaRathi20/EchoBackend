@@ -7,7 +7,11 @@ const upload = multer({ storage });
 
 export const postRoute: express.Router = express.Router();
 
-postRoute.post("/createPost", upload.single('audio'), PostController.createPost);
+/** old-code */
+// postRoute.post("/createPost", upload.single('audio'), PostController.createPost);
+
+/** new-code */
+postRoute.post("/createPost", PostController.createPost);
 postRoute.post("/likePost/:postId", PostController.likePost);
 postRoute.post("/unlikePost/:postId", PostController.unlikePost);
 postRoute.post('/commentPost/:postId', PostController.addComment);

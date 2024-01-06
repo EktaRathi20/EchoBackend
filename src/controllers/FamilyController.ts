@@ -166,7 +166,11 @@ export class FamilyController {
   ) {
     try {
       const { userId, content, type, familyroomId } = request.body;
-      const audioFile = request.file; // Get the uploaded file
+      /** old-code */
+      // const audioFile = request.file; // Get the uploaded file
+
+      /** new-code */
+      const audioFile = request.body.filePath;
       const user = await userSchema.findById(userId);
       const family = await familyRoomSchema.findOne({ _id: familyroomId });
       if (!user) {
@@ -184,7 +188,7 @@ export class FamilyController {
         });
       }
 
-      const basePath = "C:\\EchoBackend";
+      // const basePath = "C:\\EchoBackend"; //old-code
       let newPost;
 
       if (type === "audio" && audioFile) {
@@ -192,7 +196,8 @@ export class FamilyController {
           userId,
           content,
           type,
-          audioFilePath: path.join(basePath, "audio", audioFile.filename),
+          // audioFilePath: path.join(basePath, "audio", audioFile.filename), //old-code
+          audioFilePath:audioFile,
           familyRoomId: familyroomId,
         });
       } else if (type === "text") {

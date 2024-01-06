@@ -9,9 +9,16 @@ familyRoute.get("/getFamilyList/:userId", FamilyController.getFamilyRooms);
 familyRoute.post("/createFamilyRoom", FamilyController.createFamilyRoom);
 familyRoute.post("/joinFamilyRoom", FamilyController.joinFamilyRoom);
 familyRoute.get("/getFamilyById/:roomId", FamilyController.getFamilyById);
+/** old-code */
+// familyRoute.post(
+//   "/createFamilyPost",
+//   upload.single("audio"),
+//   FamilyController.createFamilyPost
+// );
+
+/** new-code */
 familyRoute.post(
   "/createFamilyPost",
-  upload.single("audio"),
   FamilyController.createFamilyPost
 );
 familyRoute.get('/getAllFamilyPost', FamilyController.getFamilyPost);
