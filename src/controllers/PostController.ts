@@ -217,15 +217,12 @@ export class PostController {
   ) {
     try {
       const commentId = request.params.commentId;
-      console.log(commentId);
       const comment = await commentSchema.findById(commentId).select("-__v");;
 
       if (!comment) {
-        // Handle case where comment is not found
         return response.status(404).json({ error: "Comment not found" });
       }
   
-      console.log(comment);
       return response.status(200).json(comment);
     } catch (error) {
       return response.status(500).json({ error: "Internal Server Error" });
