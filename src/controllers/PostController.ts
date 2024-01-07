@@ -23,7 +23,7 @@ export class PostController {
     try {
       const { userId, content, type } = request.body;
       /** old-code */
-      // const audioFile = request.file; // Get the uploaded file 
+      // const audioFile = request.file; // Get the uploaded file
 
       /** new-code */
       const audioFile = request.body.filePath;
@@ -49,7 +49,7 @@ export class PostController {
           content,
           type,
           // audioFilePath: path.join(basePath, "audio", audioFile.filename), //old-code
-          audioFilePath:audioFile
+          audioFilePath: audioFile,
         });
         await newPost.save();
       } else if (type === "text") {
@@ -205,6 +205,30 @@ export class PostController {
         .json({ message: "Comment deleted successfully" });
     } catch (error) {
       response.status(500).json({ error: "Internal server error" });
+    }
+  }
+
+  /**
+   * Handle get comment by id
+   */
+  static async getCommentById(
+    request: express.Request,
+    response: express.Response
+  ) {
+    try {
+      const commentId = request.params.commentId;
+      console.log(commentId);
+      const comment = await commentSchema.findById(commentId).select("-__v");;
+
+      if (!comment) {
+        // Handle case where comment is not found
+        return response.status(404).json({ error: "Comment not found" });
+      }
+  
+      console.log(comment);
+      return response.status(200).json(comment);
+    } catch (error) {
+      return response.status(500).json({ error: "Internal Server Error" });
     }
   }
 

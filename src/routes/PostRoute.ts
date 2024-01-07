@@ -16,5 +16,6 @@ postRoute.post("/likePost/:postId", PostController.likePost);
 postRoute.post("/unlikePost/:postId", PostController.unlikePost);
 postRoute.post('/commentPost/:postId', PostController.addComment);
 postRoute.delete('/deletePostComment/:postId/:commentId', PostController.removeComment);
+postRoute.get('/getComment/:commentId', PostController.getCommentById);
 postRoute.get('/getAllPost/:userId', PostController.getAllPost);
 postRoute.delete('/deletePost/:postId',PostController.deletePost)
