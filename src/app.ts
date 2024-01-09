@@ -7,7 +7,7 @@ import { userRoute } from "./routes/UserRoute";
 import { authRoute } from "./routes/AuthRoute";
 import { postRoute } from "./routes/PostRoute";
 import { chatRoute } from "./routes/ChatRoute";
-import { familyRoute } from "./routes/familyRoute";
+import { familyRoute } from "./routes/FamilyRoute";
 dotenv.config();
 
 const app: express.Application = express();
