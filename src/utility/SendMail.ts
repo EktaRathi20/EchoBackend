@@ -8,13 +8,13 @@ export const sendOTP = async (to: string) => {
     port: 587,
     secure: false,
     auth: {
-      user: "teamyourecho@gmail.com",
+      user: "test@mail.com",
       pass: "ohdi mrii oahg bsyv",
     },
   });
   try {
     await transporter.sendMail({
-      from: "teamyourecho@gmail.com",
+      from: "test@mail.com",
       to: to,
       subject: "One Time Password",
       html: `Your reset password OTP is  ${OTP}`,
