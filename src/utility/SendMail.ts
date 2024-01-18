@@ -9,7 +9,7 @@ export const sendOTP = async (to: string) => {
     secure: false,
     auth: {
       user: "test@mail.com",
-      pass: "ohdi mrii oahg bsyv",
+      pass: "",
     },
   });
   try {
